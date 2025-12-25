@@ -7,8 +7,15 @@ import {
   Plus, Download, Upload, Edit, Trash2, Ban, UserPlus,
   Stethoscope, BedDouble, MapPin, CreditCard, Receipt,
   PieChart, Calendar, AlertTriangle, ChevronRight, Menu,
-  X, LogOut, Home, Layers, MessageSquare, HelpCircle
+  X, LogOut, Home, Layers, MessageSquare, HelpCircle,
+  Crown, Star, Percent, Zap, Award, Target, ArrowUpRight,
+  ArrowDownRight, RefreshCw, IndianRupee
 } from "lucide-react";
+import {
+  LineChart, Line, AreaChart, Area, BarChart, Bar, 
+  PieChart as RechartsPieChart, Pie, Cell,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
+} from "recharts";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -92,6 +99,147 @@ const travelPackages = [
   { id: 2, name: "Kashmir Paradise", duration: "7D/6N", price: 45000, bookings: 67, status: "active" },
   { id: 3, name: "Kerala Backwaters", duration: "4D/3N", price: 18000, bookings: 123, status: "active" },
   { id: 4, name: "Rajasthan Heritage", duration: "6D/5N", price: 35000, bookings: 45, status: "draft" },
+];
+
+// Membership Plans Data
+const membershipPlans = [
+  {
+    id: 1,
+    name: "Metal",
+    icon: Shield,
+    color: "bg-zinc-500",
+    textColor: "text-zinc-400",
+    monthlyPrice: 199,
+    yearlyPrice: 1999,
+    discount: 16,
+    modules: ["Hospital"],
+    features: [
+      "Hospital appointment booking",
+      "Basic cashback (2%)",
+      "Email support",
+      "Appointment history",
+    ],
+    subscribers: 3245,
+    revenue: 646855,
+    status: "active",
+  },
+  {
+    id: 2,
+    name: "Silver",
+    icon: Star,
+    color: "bg-slate-400",
+    textColor: "text-slate-300",
+    monthlyPrice: 399,
+    yearlyPrice: 3999,
+    discount: 17,
+    modules: ["Hospital", "Hotel"],
+    features: [
+      "All Metal features",
+      "Hotel room booking",
+      "Enhanced cashback (4%)",
+      "Priority support",
+      "Exclusive hotel deals",
+    ],
+    subscribers: 4567,
+    revenue: 1822233,
+    status: "active",
+  },
+  {
+    id: 3,
+    name: "Gold",
+    icon: Crown,
+    color: "bg-amber-500",
+    textColor: "text-amber-400",
+    monthlyPrice: 699,
+    yearlyPrice: 6999,
+    discount: 17,
+    modules: ["Hospital", "Hotel", "Travel"],
+    features: [
+      "All Silver features",
+      "Travel package booking",
+      "Premium cashback (6%)",
+      "24/7 phone support",
+      "Early access to deals",
+      "Free travel insurance",
+    ],
+    subscribers: 3890,
+    revenue: 2721110,
+    status: "active",
+    popular: true,
+  },
+  {
+    id: 4,
+    name: "Platinum",
+    icon: Award,
+    color: "bg-gradient-to-r from-primary to-purple-500",
+    textColor: "text-primary",
+    monthlyPrice: 1299,
+    yearlyPrice: 12999,
+    discount: 17,
+    modules: ["Hospital", "Hotel", "Travel", "Ride"],
+    features: [
+      "All Gold features",
+      "Ride booking service",
+      "Maximum cashback (10%)",
+      "Personal account manager",
+      "VIP lounge access",
+      "Concierge services",
+      "Family benefits",
+    ],
+    subscribers: 1456,
+    revenue: 1891944,
+    status: "active",
+  },
+];
+
+const membershipSubscribers = [
+  { id: 1, user: "Rahul Sharma", plan: "Gold", startDate: "2024-01-01", expiryDate: "2025-01-01", status: "active", amount: 6999 },
+  { id: 2, user: "Priya Patel", plan: "Silver", startDate: "2024-02-15", expiryDate: "2025-02-15", status: "active", amount: 3999 },
+  { id: 3, user: "Amit Kumar", plan: "Platinum", startDate: "2023-12-01", expiryDate: "2024-12-01", status: "expiring", amount: 12999 },
+  { id: 4, user: "Sneha Gupta", plan: "Metal", startDate: "2024-01-20", expiryDate: "2024-07-20", status: "expired", amount: 1999 },
+  { id: 5, user: "Vikram Singh", plan: "Gold", startDate: "2024-03-01", expiryDate: "2025-03-01", status: "active", amount: 6999 },
+];
+
+// Reports & Analytics Data
+const revenueData = [
+  { month: "Jan", hospital: 245000, hotel: 189000, travel: 156000, ride: 89000 },
+  { month: "Feb", hospital: 278000, hotel: 215000, travel: 178000, ride: 102000 },
+  { month: "Mar", hospital: 312000, hotel: 245000, travel: 198000, ride: 118000 },
+  { month: "Apr", hospital: 298000, hotel: 267000, travel: 223000, ride: 134000 },
+  { month: "May", hospital: 356000, hotel: 298000, travel: 256000, ride: 156000 },
+  { month: "Jun", hospital: 389000, hotel: 334000, travel: 289000, ride: 178000 },
+];
+
+const userGrowthData = [
+  { month: "Jan", users: 8500, agents: 245 },
+  { month: "Feb", users: 9200, agents: 267 },
+  { month: "Mar", users: 10100, agents: 289 },
+  { month: "Apr", users: 10800, agents: 312 },
+  { month: "May", users: 11600, agents: 328 },
+  { month: "Jun", users: 12584, agents: 342 },
+];
+
+const bookingTrendsData = [
+  { month: "Jan", bookings: 1234 },
+  { month: "Feb", bookings: 1456 },
+  { month: "Mar", bookings: 1678 },
+  { month: "Apr", bookings: 1523 },
+  { month: "May", bookings: 1890 },
+  { month: "Jun", bookings: 2175 },
+];
+
+const moduleRevenueShare = [
+  { name: "Hospital", value: 35, color: "#14b8a6" },
+  { name: "Hotel", value: 28, color: "#f59e0b" },
+  { name: "Travel", value: 22, color: "#0ea5e9" },
+  { name: "Ride", value: 15, color: "#10b981" },
+];
+
+const membershipDistribution = [
+  { name: "Metal", value: 3245, color: "#71717a" },
+  { name: "Silver", value: 4567, color: "#94a3b8" },
+  { name: "Gold", value: 3890, color: "#f59e0b" },
+  { name: "Platinum", value: 1456, color: "#8b5cf6" },
 ];
 
 const drivers = [
@@ -1273,6 +1421,785 @@ const AdminDashboard = () => {
     </div>
   );
 
+  const renderMemberships = () => (
+    <div className="space-y-6">
+      {/* Stats Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <StatCard 
+          title="Total Subscribers" 
+          value="13,158" 
+          icon={Users} 
+          trend="+15.3% this month"
+          trendUp={true}
+          color="bg-primary/20 text-primary"
+        />
+        <StatCard 
+          title="Monthly Revenue" 
+          value="₹70.8L" 
+          icon={IndianRupee} 
+          trend="+22.1% this month"
+          trendUp={true}
+          color="bg-emerald-500/20 text-emerald-400"
+        />
+        <StatCard 
+          title="Renewal Rate" 
+          value="87.5%" 
+          icon={RefreshCw} 
+          trend="+3.2% this month"
+          trendUp={true}
+          color="bg-sky-500/20 text-sky-400"
+        />
+        <StatCard 
+          title="Avg. Revenue/User" 
+          value="₹538" 
+          icon={Target} 
+          trend="+8.7% this month"
+          trendUp={true}
+          color="bg-amber-500/20 text-amber-400"
+        />
+      </div>
+
+      <Tabs defaultValue="plans" className="w-full">
+        <TabsList className="bg-muted/30 border border-border/50">
+          <TabsTrigger value="plans">Membership Plans</TabsTrigger>
+          <TabsTrigger value="subscribers">Subscribers</TabsTrigger>
+          <TabsTrigger value="discounts">Discounts & Offers</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="plans" className="mt-6">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-lg font-semibold">Manage Plans</h3>
+            <Button className="gap-2">
+              <Plus className="w-4 h-4" /> Create New Plan
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {membershipPlans.map((plan) => (
+              <Card key={plan.id} className={`bg-card/50 backdrop-blur-sm border-border/50 relative overflow-hidden ${plan.popular ? 'ring-2 ring-primary' : ''}`}>
+                {plan.popular && (
+                  <div className="absolute top-3 right-3">
+                    <Badge className="bg-primary text-primary-foreground">Most Popular</Badge>
+                  </div>
+                )}
+                <CardHeader className="pb-4">
+                  <div className={`w-12 h-12 rounded-xl ${plan.color} flex items-center justify-center mb-3`}>
+                    <plan.icon className="w-6 h-6 text-white" />
+                  </div>
+                  <CardTitle className="text-xl">{plan.name}</CardTitle>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-3xl font-bold">₹{plan.monthlyPrice}</span>
+                    <span className="text-muted-foreground">/month</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    ₹{plan.yearlyPrice}/year <Badge variant="outline" className="ml-1 text-emerald-400 border-emerald-400/30">Save {plan.discount}%</Badge>
+                  </p>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <p className="text-xs text-muted-foreground mb-2">Modules Access:</p>
+                    <div className="flex flex-wrap gap-1">
+                      {plan.modules.map((module) => (
+                        <Badge key={module} variant="outline" className="text-xs">
+                          {module}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                  <Separator />
+                  <div className="space-y-2">
+                    {plan.features.slice(0, 4).map((feature, idx) => (
+                      <div key={idx} className="flex items-center gap-2 text-sm">
+                        <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                        <span className="text-muted-foreground">{feature}</span>
+                      </div>
+                    ))}
+                    {plan.features.length > 4 && (
+                      <p className="text-xs text-primary cursor-pointer">+{plan.features.length - 4} more features</p>
+                    )}
+                  </div>
+                  <Separator />
+                  <div className="grid grid-cols-2 gap-4 text-center">
+                    <div>
+                      <p className="text-2xl font-bold">{plan.subscribers.toLocaleString()}</p>
+                      <p className="text-xs text-muted-foreground">Subscribers</p>
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-emerald-400">₹{(plan.revenue / 100000).toFixed(1)}L</p>
+                      <p className="text-xs text-muted-foreground">Revenue</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" className="flex-1">
+                      <Edit className="w-4 h-4 mr-1" /> Edit
+                    </Button>
+                    <Button variant="ghost" size="sm" className="px-2">
+                      <MoreVertical className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </TabsContent>
+
+        <TabsContent value="subscribers" className="mt-6">
+          <div className="flex flex-col sm:flex-row gap-4 justify-between mb-6">
+            <div className="flex gap-3">
+              <div className="relative flex-1 sm:w-80">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input placeholder="Search subscribers..." className="pl-10 bg-muted/30" />
+              </div>
+              <Select defaultValue="all">
+                <SelectTrigger className="w-40 bg-muted/30">
+                  <SelectValue placeholder="Plan" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Plans</SelectItem>
+                  <SelectItem value="metal">Metal</SelectItem>
+                  <SelectItem value="silver">Silver</SelectItem>
+                  <SelectItem value="gold">Gold</SelectItem>
+                  <SelectItem value="platinum">Platinum</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select defaultValue="all">
+                <SelectTrigger className="w-40 bg-muted/30">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="expiring">Expiring Soon</SelectItem>
+                  <SelectItem value="expired">Expired</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button variant="outline" className="gap-2">
+              <Download className="w-4 h-4" /> Export
+            </Button>
+          </div>
+
+          <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+            <Table>
+              <TableHeader>
+                <TableRow className="border-border/50">
+                  <TableHead>User</TableHead>
+                  <TableHead>Plan</TableHead>
+                  <TableHead>Start Date</TableHead>
+                  <TableHead>Expiry Date</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {membershipSubscribers.map((sub) => (
+                  <TableRow key={sub.id} className="border-border/30">
+                    <TableCell className="font-medium">{sub.user}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className={
+                        sub.plan === "Platinum" ? "border-primary text-primary" :
+                        sub.plan === "Gold" ? "border-amber-400 text-amber-400" :
+                        sub.plan === "Silver" ? "border-slate-400 text-slate-400" :
+                        "border-zinc-500 text-zinc-400"
+                      }>
+                        {sub.plan}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">{sub.startDate}</TableCell>
+                    <TableCell className="text-muted-foreground">{sub.expiryDate}</TableCell>
+                    <TableCell className="font-medium">₹{sub.amount.toLocaleString()}</TableCell>
+                    <TableCell>
+                      <Badge className={
+                        sub.status === "active" ? "bg-emerald-500/20 text-emerald-400" :
+                        sub.status === "expiring" ? "bg-amber-500/20 text-amber-400" :
+                        "bg-red-500/20 text-red-400"
+                      }>
+                        {sub.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-1">
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        {sub.status === "expiring" && (
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-emerald-400">
+                            <RefreshCw className="w-4 h-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="discounts" className="mt-6">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-lg font-semibold">Active Discounts & Offers</h3>
+            <Button className="gap-2">
+              <Plus className="w-4 h-4" /> Create Offer
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <Badge className="bg-emerald-500/20 text-emerald-400">Active</Badge>
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                    <MoreVertical className="w-4 h-4" />
+                  </Button>
+                </div>
+                <CardTitle className="text-lg">New Year Special</CardTitle>
+                <CardDescription>Get 25% off on yearly plans</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-emerald-500/10">
+                  <Percent className="w-8 h-8 text-emerald-400" />
+                  <div>
+                    <p className="text-2xl font-bold text-emerald-400">25% OFF</p>
+                    <p className="text-xs text-muted-foreground">On all yearly plans</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-muted-foreground">Code</p>
+                    <p className="font-mono font-medium">NEWYEAR25</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Usage</p>
+                    <p className="font-medium">234 / 500</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Start Date</p>
+                    <p className="font-medium">Jan 1, 2024</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">End Date</p>
+                    <p className="font-medium">Jan 31, 2024</p>
+                  </div>
+                </div>
+                <Progress value={46.8} className="h-2" />
+                <p className="text-xs text-muted-foreground text-center">46.8% of limit used</p>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <Badge className="bg-emerald-500/20 text-emerald-400">Active</Badge>
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                    <MoreVertical className="w-4 h-4" />
+                  </Button>
+                </div>
+                <CardTitle className="text-lg">Referral Bonus</CardTitle>
+                <CardDescription>Extra discount for referrals</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-primary/10">
+                  <Gift className="w-8 h-8 text-primary" />
+                  <div>
+                    <p className="text-2xl font-bold text-primary">₹200 OFF</p>
+                    <p className="text-xs text-muted-foreground">First month free</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-muted-foreground">Code</p>
+                    <p className="font-mono font-medium">REF200</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Usage</p>
+                    <p className="font-medium">1,234 / ∞</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Start Date</p>
+                    <p className="font-medium">Always</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">End Date</p>
+                    <p className="font-medium">No Expiry</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <Badge className="bg-amber-500/20 text-amber-400">Scheduled</Badge>
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                    <MoreVertical className="w-4 h-4" />
+                  </Button>
+                </div>
+                <CardTitle className="text-lg">Upgrade Offer</CardTitle>
+                <CardDescription>Upgrade to higher plans</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-amber-500/10">
+                  <Zap className="w-8 h-8 text-amber-400" />
+                  <div>
+                    <p className="text-2xl font-bold text-amber-400">30% OFF</p>
+                    <p className="text-xs text-muted-foreground">On plan upgrades</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-muted-foreground">Code</p>
+                    <p className="font-mono font-medium">UPGRADE30</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Usage</p>
+                    <p className="font-medium">0 / 200</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Start Date</p>
+                    <p className="font-medium">Feb 1, 2024</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">End Date</p>
+                    <p className="font-medium">Feb 14, 2024</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+
+  const renderReports = () => (
+    <div className="space-y-6">
+      {/* Key Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Total Revenue</p>
+                <p className="text-2xl font-bold">₹24.58L</p>
+                <div className="flex items-center gap-1 mt-2 text-sm text-emerald-400">
+                  <ArrowUpRight className="w-4 h-4" />
+                  <span>+18.2% vs last month</span>
+                </div>
+              </div>
+              <div className="w-14 h-14 rounded-2xl bg-emerald-500/20 flex items-center justify-center">
+                <DollarSign className="w-7 h-7 text-emerald-400" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Total Bookings</p>
+                <p className="text-2xl font-bold">8,956</p>
+                <div className="flex items-center gap-1 mt-2 text-sm text-emerald-400">
+                  <ArrowUpRight className="w-4 h-4" />
+                  <span>+23.5% vs last month</span>
+                </div>
+              </div>
+              <div className="w-14 h-14 rounded-2xl bg-sky-500/20 flex items-center justify-center">
+                <Activity className="w-7 h-7 text-sky-400" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Active Users</p>
+                <p className="text-2xl font-bold">12,584</p>
+                <div className="flex items-center gap-1 mt-2 text-sm text-emerald-400">
+                  <ArrowUpRight className="w-4 h-4" />
+                  <span>+12.5% vs last month</span>
+                </div>
+              </div>
+              <div className="w-14 h-14 rounded-2xl bg-primary/20 flex items-center justify-center">
+                <Users className="w-7 h-7 text-primary" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground mb-1">Avg. Order Value</p>
+                <p className="text-2xl font-bold">₹2,745</p>
+                <div className="flex items-center gap-1 mt-2 text-sm text-red-400">
+                  <ArrowDownRight className="w-4 h-4" />
+                  <span>-3.2% vs last month</span>
+                </div>
+              </div>
+              <div className="w-14 h-14 rounded-2xl bg-amber-500/20 flex items-center justify-center">
+                <Receipt className="w-7 h-7 text-amber-400" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Charts Row 1 */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Revenue Trend */}
+        <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className="text-lg">Revenue Trend</CardTitle>
+              <CardDescription>Module-wise revenue over time</CardDescription>
+            </div>
+            <Select defaultValue="6m">
+              <SelectTrigger className="w-28 bg-muted/30">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="7d">7 Days</SelectItem>
+                <SelectItem value="1m">1 Month</SelectItem>
+                <SelectItem value="3m">3 Months</SelectItem>
+                <SelectItem value="6m">6 Months</SelectItem>
+                <SelectItem value="1y">1 Year</SelectItem>
+              </SelectContent>
+            </Select>
+          </CardHeader>
+          <CardContent>
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={revenueData}>
+                  <defs>
+                    <linearGradient id="hospitalGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#14b8a6" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#14b8a6" stopOpacity={0}/>
+                    </linearGradient>
+                    <linearGradient id="hotelGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#f59e0b" stopOpacity={0}/>
+                    </linearGradient>
+                    <linearGradient id="travelGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0}/>
+                    </linearGradient>
+                    <linearGradient id="rideGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickFormatter={(v) => `₹${v/1000}k`} />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'hsl(var(--card))', 
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px'
+                    }}
+                    formatter={(value: number) => [`₹${value.toLocaleString()}`, '']}
+                  />
+                  <Legend />
+                  <Area type="monotone" dataKey="hospital" name="Hospital" stroke="#14b8a6" fill="url(#hospitalGrad)" strokeWidth={2} />
+                  <Area type="monotone" dataKey="hotel" name="Hotel" stroke="#f59e0b" fill="url(#hotelGrad)" strokeWidth={2} />
+                  <Area type="monotone" dataKey="travel" name="Travel" stroke="#0ea5e9" fill="url(#travelGrad)" strokeWidth={2} />
+                  <Area type="monotone" dataKey="ride" name="Ride" stroke="#10b981" fill="url(#rideGrad)" strokeWidth={2} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* User Growth */}
+        <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className="text-lg">User & Agent Growth</CardTitle>
+              <CardDescription>Monthly registration trends</CardDescription>
+            </div>
+            <Button variant="outline" size="sm" className="gap-2">
+              <Download className="w-4 h-4" /> Export
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={userGrowthData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'hsl(var(--card))', 
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px'
+                    }}
+                  />
+                  <Legend />
+                  <Line type="monotone" dataKey="users" name="Users" stroke="hsl(var(--primary))" strokeWidth={3} dot={{ fill: 'hsl(var(--primary))' }} />
+                  <Line type="monotone" dataKey="agents" name="Agents" stroke="#10b981" strokeWidth={3} dot={{ fill: '#10b981' }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Charts Row 2 */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Booking Trends */}
+        <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+          <CardHeader>
+            <CardTitle className="text-lg">Booking Trends</CardTitle>
+            <CardDescription>Monthly booking volume</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={bookingTrendsData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'hsl(var(--card))', 
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px'
+                    }}
+                  />
+                  <Bar dataKey="bookings" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Revenue Distribution */}
+        <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+          <CardHeader>
+            <CardTitle className="text-lg">Revenue Distribution</CardTitle>
+            <CardDescription>By service module</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <RechartsPieChart>
+                  <Pie
+                    data={moduleRevenueShare}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    {moduleRevenueShare.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'hsl(var(--card))', 
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px'
+                    }}
+                    formatter={(value: number) => [`${value}%`, '']}
+                  />
+                </RechartsPieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="grid grid-cols-2 gap-2 mt-4">
+              {moduleRevenueShare.map((item) => (
+                <div key={item.name} className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
+                  <span className="text-sm text-muted-foreground">{item.name}: {item.value}%</span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Membership Distribution */}
+        <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+          <CardHeader>
+            <CardTitle className="text-lg">Membership Distribution</CardTitle>
+            <CardDescription>By plan type</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <RechartsPieChart>
+                  <Pie
+                    data={membershipDistribution}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    {membershipDistribution.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'hsl(var(--card))', 
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px'
+                    }}
+                  />
+                </RechartsPieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="grid grid-cols-2 gap-2 mt-4">
+              {membershipDistribution.map((item) => (
+                <div key={item.name} className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
+                  <span className="text-sm text-muted-foreground">{item.name}: {item.value.toLocaleString()}</span>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Module Performance Table */}
+      <Card className="bg-card/50 backdrop-blur-sm border-border/50">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle className="text-lg">Module Performance</CardTitle>
+            <CardDescription>Detailed metrics by service</CardDescription>
+          </div>
+          <Button variant="outline" size="sm" className="gap-2">
+            <Download className="w-4 h-4" /> Download Report
+          </Button>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow className="border-border/50">
+                <TableHead>Module</TableHead>
+                <TableHead>Total Bookings</TableHead>
+                <TableHead>Revenue</TableHead>
+                <TableHead>Growth</TableHead>
+                <TableHead>Avg. Value</TableHead>
+                <TableHead>Satisfaction</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow className="border-border/30">
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-hospital/20 flex items-center justify-center">
+                      <Building2 className="w-4 h-4 text-hospital" />
+                    </div>
+                    <span className="font-medium">Hospital</span>
+                  </div>
+                </TableCell>
+                <TableCell className="font-medium">5,922</TableCell>
+                <TableCell className="font-medium text-emerald-400">₹18.78L</TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-1 text-emerald-400">
+                    <TrendingUp className="w-4 h-4" />
+                    <span>+24.5%</span>
+                  </div>
+                </TableCell>
+                <TableCell>₹3,172</TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-1">
+                    <span className="text-amber-400">★</span> 4.7
+                  </div>
+                </TableCell>
+              </TableRow>
+              <TableRow className="border-border/30">
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-hotel/20 flex items-center justify-center">
+                      <Hotel className="w-4 h-4 text-hotel" />
+                    </div>
+                    <span className="font-medium">Hotel</span>
+                  </div>
+                </TableCell>
+                <TableCell className="font-medium">1,835</TableCell>
+                <TableCell className="font-medium text-emerald-400">₹15.48L</TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-1 text-emerald-400">
+                    <TrendingUp className="w-4 h-4" />
+                    <span>+18.2%</span>
+                  </div>
+                </TableCell>
+                <TableCell>₹8,437</TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-1">
+                    <span className="text-amber-400">★</span> 4.8
+                  </div>
+                </TableCell>
+              </TableRow>
+              <TableRow className="border-border/30">
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-travel/20 flex items-center justify-center">
+                      <Plane className="w-4 h-4 text-travel" />
+                    </div>
+                    <span className="font-medium">Travel</span>
+                  </div>
+                </TableCell>
+                <TableCell className="font-medium">324</TableCell>
+                <TableCell className="font-medium text-emerald-400">₹13.00L</TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-1 text-emerald-400">
+                    <TrendingUp className="w-4 h-4" />
+                    <span>+31.8%</span>
+                  </div>
+                </TableCell>
+                <TableCell>₹40,123</TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-1">
+                    <span className="text-amber-400">★</span> 4.6
+                  </div>
+                </TableCell>
+              </TableRow>
+              <TableRow className="border-border/30">
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-ride/20 flex items-center justify-center">
+                      <Car className="w-4 h-4 text-ride" />
+                    </div>
+                    <span className="font-medium">Ride</span>
+                  </div>
+                </TableCell>
+                <TableCell className="font-medium">875</TableCell>
+                <TableCell className="font-medium text-emerald-400">₹7.77L</TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-1 text-red-400">
+                    <TrendingDown className="w-4 h-4" />
+                    <span>-5.3%</span>
+                  </div>
+                </TableCell>
+                <TableCell>₹888</TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-1">
+                    <span className="text-amber-400">★</span> 4.5
+                  </div>
+                </TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
+  );
+
   const renderContent = () => {
     switch (activeSection) {
       case "overview": return renderOverview();
@@ -1283,6 +2210,8 @@ const AdminDashboard = () => {
       case "travel": return renderTravelManagement();
       case "rides": return renderRideManagement();
       case "wallet": return renderWalletManagement();
+      case "memberships": return renderMemberships();
+      case "reports": return renderReports();
       case "settings": return renderSettings();
       default: return (
         <Card className="bg-card/50 backdrop-blur-sm border-border/50 p-12 text-center">
