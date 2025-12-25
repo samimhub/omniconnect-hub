@@ -11,6 +11,7 @@ import Travel from "./pages/Travel";
 import Ride from "./pages/Ride";
 import Membership from "./pages/Membership";
 import Dashboard from "./pages/Dashboard";
+import AgentDashboard from "./pages/AgentDashboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,7 +30,8 @@ const App = () => (
           <Route path="/travel" element={<Travel />} />
           <Route path="/ride" element={<Ride />} />
           <Route path="/membership" element={<Membership />} />
-          <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/agent-dashboard" element={<AgentDashboard />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
