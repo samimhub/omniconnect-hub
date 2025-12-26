@@ -1,8 +1,11 @@
+import { useState } from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { Check, Crown, Star, Zap, Diamond, ArrowRight, Gift, Wallet } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { RazorpayButton } from "@/components/payment/RazorpayButton";
+import { toast } from "sonner";
 
 const plans = [
   {
@@ -123,6 +126,19 @@ const faqs = [
 ];
 
 export default function Membership() {
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
+
+  const handlePaymentSuccess = (planName: string) => {
+    toast.success(`Successfully subscribed to ${planName} plan!`);
+  };
+
+  const getPrice = (plan: typeof plans[0]) => {
+    if (billingCycle === 'yearly') {
+      return parseInt(plan.yearlyPrice.replace(/[^\d]/g, ''));
+    }
+    return parseInt(plan.price.replace(/[^\d]/g, ''));
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -239,13 +255,19 @@ export default function Membership() {
                   </ul>
 
                   {/* CTA */}
-                  <Button
-                    variant={plan.popular ? "hero" : "outline"}
-                    className="w-full"
+                  <RazorpayButton
+                    amount={getPrice(plan)}
+                    name="CareSync Membership"
+                    description={`${plan.name} Plan - ${billingCycle === 'yearly' ? 'Yearly' : 'Monthly'} Subscription`}
+                    onSuccess={() => handlePaymentSuccess(plan.name)}
+                    className={cn(
+                      "w-full",
+                      plan.popular && "bg-gradient-hero hover:opacity-90"
+                    )}
+                    variant={plan.popular ? "default" : "outline"}
                   >
-                    Get Started
-                    <ArrowRight className="h-4 w-4 ml-2" />
-                  </Button>
+                    Subscribe Now
+                  </RazorpayButton>
                 </div>
               ))}
             </div>
