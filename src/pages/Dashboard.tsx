@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
@@ -28,9 +28,12 @@ import {
   Phone,
   Mail,
   Shield,
-  Crown
+  Crown,
+  LogOut
 } from "lucide-react";
 import { useSubscription } from "@/hooks/useSubscription";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 // Mock user data - replace with real data from backend
 const mockUser = {
@@ -94,10 +97,27 @@ const StatusBadge = ({ status }: { status: string }) => {
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const { subscription, isLoading: isSubLoading } = useSubscription();
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
 
   // Determine membership info from subscription
   const membershipPlan = subscription?.plan_name || null;
   const membershipExpiry = subscription?.end_date ? new Date(subscription.end_date).toLocaleDateString() : null;
+
+  // User display info
+  const userName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "User";
+  const userEmail = user?.email || "";
+  const userPhone = user?.user_metadata?.phone || "";
+
+  const handleLogout = async () => {
+    const { error } = await signOut();
+    if (error) {
+      toast.error("Failed to sign out");
+    } else {
+      toast.success("Signed out successfully");
+      navigate("/");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -117,32 +137,32 @@ const Dashboard = () => {
               <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
                 {/* Avatar */}
                 <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center text-primary-foreground text-2xl font-bold">
-                  {mockUser.name.split(' ').map(n => n[0]).join('')}
+                  {userName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
                 </div>
                 
                 {/* User Info */}
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
-                    <h2 className="text-2xl font-bold text-foreground">{mockUser.name}</h2>
-                    {mockUser.verified && (
-                      <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
-                        <Shield className="w-3 h-3 mr-1" />
-                        Verified
-                      </Badge>
-                    )}
+                    <h2 className="text-2xl font-bold text-foreground">{userName}</h2>
+                    <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
+                      <Shield className="w-3 h-3 mr-1" />
+                      Verified
+                    </Badge>
                   </div>
                   <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
                     <span className="flex items-center gap-1">
                       <Mail className="w-4 h-4" />
-                      {mockUser.email}
+                      {userEmail}
                     </span>
-                    <span className="flex items-center gap-1">
-                      <Phone className="w-4 h-4" />
-                      {mockUser.phone}
-                    </span>
+                    {userPhone && (
+                      <span className="flex items-center gap-1">
+                        <Phone className="w-4 h-4" />
+                        {userPhone}
+                      </span>
+                    )}
                     <span className="flex items-center gap-1">
                       <Calendar className="w-4 h-4" />
-                      Member since {new Date(mockUser.joinedDate).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}
+                      Member since {new Date(user?.created_at || Date.now()).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}
                     </span>
                   </div>
                 </div>
@@ -172,6 +192,11 @@ const Dashboard = () => {
                 <Button variant="outline" size="sm">
                   <Edit className="w-4 h-4 mr-2" />
                   Edit Profile
+                </Button>
+
+                <Button variant="outline" size="sm" onClick={handleLogout} className="text-destructive hover:text-destructive">
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Logout
                 </Button>
               </div>
             </CardContent>

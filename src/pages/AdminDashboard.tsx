@@ -40,8 +40,10 @@ import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAdminSubscriptions } from "@/hooks/useAdminSubscriptions";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 // Mock Data
 const dashboardStats = {
@@ -270,9 +272,23 @@ const AdminDashboard = () => {
   const [activeSection, setActiveSection] = useState("overview");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
   
   // Fetch real subscription data
   const { subscriptions: realSubscriptions, stats: subStats, isLoading: subLoading } = useAdminSubscriptions();
+
+  const adminName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Admin";
+
+  const handleLogout = async () => {
+    const { error } = await signOut();
+    if (error) {
+      toast.error("Failed to sign out");
+    } else {
+      toast.success("Signed out successfully");
+      navigate("/");
+    }
+  };
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, string> = {
@@ -2319,7 +2335,10 @@ const AdminDashboard = () => {
 
           {/* Footer */}
           <div className="p-3 border-t border-border/50">
-            <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-red-500/10 text-red-400 transition-all">
+            <button 
+              onClick={handleLogout}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-red-500/10 text-red-400 transition-all"
+            >
               <LogOut className="w-5 h-5 flex-shrink-0" />
               {sidebarOpen && <span className="text-sm font-medium">Logout</span>}
             </button>
@@ -2353,10 +2372,12 @@ const AdminDashboard = () => {
               <Separator orientation="vertical" className="h-8" />
               <div className="flex items-center gap-3">
                 <Avatar className="w-9 h-9">
-                  <AvatarFallback className="bg-primary/20 text-primary">AD</AvatarFallback>
+                  <AvatarFallback className="bg-primary/20 text-primary">
+                    {adminName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                  </AvatarFallback>
                 </Avatar>
                 <div className="hidden md:block">
-                  <p className="text-sm font-medium">Admin User</p>
+                  <p className="text-sm font-medium">{adminName}</p>
                   <p className="text-xs text-muted-foreground">Super Admin</p>
                 </div>
               </div>

@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,27 +11,127 @@ import {
   Eye,
   EyeOff,
   ArrowLeft,
-  Chrome
+  Loader2,
+  UserCheck,
+  Shield,
+  Users
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth, AppRole } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
-type AuthMode = "login" | "signup" | "verify";
+type AuthMode = "login" | "signup";
+
+const roleOptions: { value: AppRole; label: string; description: string; icon: React.ReactNode }[] = [
+  { 
+    value: "user", 
+    label: "User", 
+    description: "Book services & earn rewards",
+    icon: <Users className="h-5 w-5" />
+  },
+  { 
+    value: "agent", 
+    label: "Agent", 
+    description: "Earn commission on bookings",
+    icon: <UserCheck className="h-5 w-5" />
+  },
+  { 
+    value: "admin", 
+    label: "Admin", 
+    description: "Manage the platform",
+    icon: <Shield className="h-5 w-5" />
+  },
+];
 
 export default function Auth() {
   const [mode, setMode] = useState<AuthMode>("login");
   const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     phone: "",
     password: "",
+    role: "user" as AppRole,
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const { signIn, signUp, isAuthenticated, isLoading, getDashboardPath } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
+      const from = (location.state as { from?: string })?.from || getDashboardPath();
+      navigate(from, { replace: true });
+    }
+  }, [isAuthenticated, isLoading, navigate, location.state, getDashboardPath]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle authentication
-    console.log("Form submitted:", formData);
+    setIsSubmitting(true);
+
+    try {
+      if (mode === "login") {
+        const { error } = await signIn(formData.email, formData.password);
+        if (error) {
+          toast.error(error.message || "Failed to sign in");
+        } else {
+          toast.success("Signed in successfully!");
+          // Navigation will happen via useEffect
+        }
+      } else {
+        // Validate fields
+        if (!formData.name.trim()) {
+          toast.error("Please enter your name");
+          setIsSubmitting(false);
+          return;
+        }
+        if (!formData.email.trim()) {
+          toast.error("Please enter your email");
+          setIsSubmitting(false);
+          return;
+        }
+        if (formData.password.length < 6) {
+          toast.error("Password must be at least 6 characters");
+          setIsSubmitting(false);
+          return;
+        }
+
+        const { error } = await signUp(
+          formData.email, 
+          formData.password, 
+          formData.name, 
+          formData.phone,
+          formData.role
+        );
+        
+        if (error) {
+          if (error.message.includes("already registered")) {
+            toast.error("This email is already registered. Please sign in.");
+          } else {
+            toast.error(error.message || "Failed to create account");
+          }
+        } else {
+          toast.success("Account created successfully! You can now sign in.");
+          setMode("login");
+        }
+      }
+    } catch (err) {
+      console.error("Auth error:", err);
+      toast.error("An unexpected error occurred");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex">
@@ -58,42 +158,52 @@ export default function Auth() {
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
-              {mode === "login" && "Welcome back"}
-              {mode === "signup" && "Create your account"}
-              {mode === "verify" && "Verify your details"}
+              {mode === "login" ? "Welcome back" : "Create your account"}
             </h1>
             <p className="text-muted-foreground">
-              {mode === "login" && "Sign in to access your account and services"}
-              {mode === "signup" && "Join 50,000+ users enjoying our services"}
-              {mode === "verify" && "Complete your profile to get started"}
+              {mode === "login" 
+                ? "Sign in to access your account and services" 
+                : "Join 50,000+ users enjoying our services"}
             </p>
           </div>
 
-          {/* Social Login */}
-          {mode !== "verify" && (
-            <>
-              <Button variant="outline" className="w-full mb-4" size="lg">
-                <Chrome className="h-5 w-5 mr-2" />
-                Continue with Google
-              </Button>
-
-              <div className="relative my-6">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-border" />
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-4 bg-background text-muted-foreground">
-                    or continue with email
-                  </span>
-                </div>
-              </div>
-            </>
-          )}
-
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Role Selection - Signup only */}
+            {mode === "signup" && (
+              <div className="space-y-3">
+                <Label>I want to join as</Label>
+                <div className="grid grid-cols-3 gap-3">
+                  {roleOptions.map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => setFormData({ ...formData, role: option.value })}
+                      className={cn(
+                        "p-4 rounded-lg border-2 transition-all text-center",
+                        formData.role === option.value
+                          ? "border-primary bg-primary/10"
+                          : "border-border hover:border-primary/50"
+                      )}
+                    >
+                      <div className={cn(
+                        "mx-auto w-10 h-10 rounded-full flex items-center justify-center mb-2",
+                        formData.role === option.value
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted text-muted-foreground"
+                      )}>
+                        {option.icon}
+                      </div>
+                      <p className="font-medium text-sm">{option.label}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{option.description}</p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Name - Signup only */}
-            {(mode === "signup" || mode === "verify") && (
+            {mode === "signup" && (
               <div className="space-y-2">
                 <Label htmlFor="name">Full Name</Label>
                 <div className="relative">
@@ -132,10 +242,10 @@ export default function Auth() {
               </div>
             </div>
 
-            {/* Phone - Signup & Verify */}
-            {(mode === "signup" || mode === "verify") && (
+            {/* Phone - Signup only */}
+            {mode === "signup" && (
               <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number</Label>
+                <Label htmlFor="phone">Phone Number (Optional)</Label>
                 <div className="relative">
                   <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                   <Input
@@ -147,61 +257,58 @@ export default function Auth() {
                       setFormData({ ...formData, phone: e.target.value })
                     }
                     className="pl-10"
-                    required
                   />
                 </div>
               </div>
             )}
 
             {/* Password */}
-            {mode !== "verify" && (
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Enter your password"
-                    value={formData.password}
-                    onChange={(e) =>
-                      setFormData({ ...formData, password: e.target.value })
-                    }
-                    className="pl-10 pr-10"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-5 w-5" />
-                    ) : (
-                      <Eye className="h-5 w-5" />
-                    )}
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Forgot Password */}
-            {mode === "login" && (
-              <div className="text-right">
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter your password"
+                  value={formData.password}
+                  onChange={(e) =>
+                    setFormData({ ...formData, password: e.target.value })
+                  }
+                  className="pl-10 pr-10"
+                  required
+                  minLength={6}
+                />
                 <button
                   type="button"
-                  className="text-sm text-primary hover:underline"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
-                  Forgot password?
+                  {showPassword ? (
+                    <EyeOff className="h-5 w-5" />
+                  ) : (
+                    <Eye className="h-5 w-5" />
+                  )}
                 </button>
               </div>
-            )}
+            </div>
 
             {/* Submit Button */}
-            <Button type="submit" variant="hero" className="w-full" size="lg">
-              {mode === "login" && "Sign In"}
-              {mode === "signup" && "Create Account"}
-              {mode === "verify" && "Continue"}
+            <Button 
+              type="submit" 
+              variant="hero" 
+              className="w-full" 
+              size="lg"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  {mode === "login" ? "Signing In..." : "Creating Account..."}
+                </>
+              ) : (
+                mode === "login" ? "Sign In" : "Create Account"
+              )}
             </Button>
           </form>
 

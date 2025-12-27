@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { 
   Users, Wallet, TrendingUp, Calendar, FileText, 
   Download, Clock, CheckCircle, XCircle, IndianRupee,
@@ -20,6 +20,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 // Mock Agent Data
 const agentData = {
@@ -112,6 +114,22 @@ const getModuleColor = (type: string) => {
 
 const AgentDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
+
+  // User display info
+  const agentName = user?.user_metadata?.full_name || user?.email?.split("@")[0] || "Agent";
+  const agentEmail = user?.email || agentData.email;
+
+  const handleLogout = async () => {
+    const { error } = await signOut();
+    if (error) {
+      toast.error("Failed to sign out");
+    } else {
+      toast.success("Signed out successfully");
+      navigate("/");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -129,14 +147,12 @@ const AgentDashboard = () => {
           {/* Agent Info */}
           <div className="p-4 border-b border-border">
             <div className="flex items-center gap-3">
-              <img 
-                src={agentData.profileImage} 
-                alt={agentData.name}
-                className="w-12 h-12 rounded-full border-2 border-primary"
-              />
+              <div className="w-12 h-12 rounded-full border-2 border-primary bg-primary/20 flex items-center justify-center text-primary font-bold">
+                {agentName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+              </div>
               <div>
-                <p className="font-semibold text-sm">{agentData.name}</p>
-                <p className="text-xs text-muted-foreground">{agentData.agentId}</p>
+                <p className="font-semibold text-sm">{agentName}</p>
+                <p className="text-xs text-muted-foreground">{agentEmail}</p>
                 <Badge className="mt-1 bg-hotel/20 text-hotel border-hotel/30 text-xs">
                   {agentData.tier} Agent
                 </Badge>
@@ -197,7 +213,11 @@ const AgentDashboard = () => {
                 <Home className="mr-2 h-4 w-4" /> Back to Home
               </Button>
             </Link>
-            <Button variant="ghost" className="w-full justify-start text-destructive hover:text-destructive">
+            <Button 
+              variant="ghost" 
+              className="w-full justify-start text-destructive hover:text-destructive"
+              onClick={handleLogout}
+            >
               <LogOut className="mr-2 h-4 w-4" /> Logout
             </Button>
           </div>
@@ -210,7 +230,7 @@ const AgentDashboard = () => {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-3xl font-display font-bold">
-              Welcome back, {agentData.name.split(" ")[0]}!
+              Welcome back, {agentName.split(" ")[0]}!
             </h1>
             <p className="text-muted-foreground mt-1">
               Here's your performance overview
