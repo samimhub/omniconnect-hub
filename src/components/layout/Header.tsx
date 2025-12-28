@@ -1,14 +1,19 @@
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Wallet, Bell, User } from "lucide-react";
+import { Menu, X, Wallet, Bell, User, LogOut, LayoutDashboard, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const navigation = [
   { name: "Home", href: "/" },
-  { name: "Dashboard", href: "/dashboard" },
-  { name: "Agent Portal", href: "/agent-dashboard" },
-  { name: "Admin", href: "/admin" },
   { name: "Hospital", href: "/hospital" },
   { name: "Hotel", href: "/hotel" },
   { name: "Travel", href: "/travel" },
@@ -19,6 +24,17 @@ const navigation = [
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, isAuthenticated, signOut, getDashboardPath, role } = useAuth();
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/");
+  };
+
+  const handleDashboard = () => {
+    navigate(getDashboardPath());
+  };
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 glass-dark">
@@ -58,12 +74,41 @@ export function Header() {
           <Button variant="ghost" size="icon">
             <Wallet className="h-5 w-5" />
           </Button>
-          <Link to="/auth">
-            <Button variant="hero" size="default">
-              <User className="h-4 w-4" />
-              Sign In
-            </Button>
-          </Link>
+          
+          {isAuthenticated ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="hero" size="default" className="gap-2">
+                  <User className="h-4 w-4" />
+                  Profile
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                  {user?.email}
+                  <span className="block text-xs capitalize">Role: {role}</span>
+                </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleDashboard} className="cursor-pointer">
+                  <LayoutDashboard className="mr-2 h-4 w-4" />
+                  Dashboard
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Link to="/auth">
+              <Button variant="hero" size="default">
+                <User className="h-4 w-4" />
+                Sign In
+              </Button>
+            </Link>
+          )}
         </div>
 
         {/* Mobile menu button */}
@@ -96,12 +141,37 @@ export function Header() {
                 {item.name}
               </Link>
             ))}
-            <div className="pt-4 border-t border-border flex gap-2">
-              <Link to="/auth" className="flex-1">
-                <Button variant="hero" className="w-full">
-                  Sign In
-                </Button>
-              </Link>
+            <div className="pt-4 border-t border-border space-y-2">
+              {isAuthenticated ? (
+                <>
+                  <div className="px-4 py-2 text-sm text-muted-foreground">
+                    {user?.email}
+                    <span className="block text-xs capitalize">Role: {role}</span>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    className="w-full justify-start" 
+                    onClick={() => { handleDashboard(); setMobileMenuOpen(false); }}
+                  >
+                    <LayoutDashboard className="mr-2 h-4 w-4" />
+                    Dashboard
+                  </Button>
+                  <Button 
+                    variant="destructive" 
+                    className="w-full justify-start" 
+                    onClick={() => { handleLogout(); setMobileMenuOpen(false); }}
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Logout
+                  </Button>
+                </>
+              ) : (
+                <Link to="/auth" className="block" onClick={() => setMobileMenuOpen(false)}>
+                  <Button variant="hero" className="w-full">
+                    Sign In
+                  </Button>
+                </Link>
+              )}
             </div>
           </div>
         </div>
