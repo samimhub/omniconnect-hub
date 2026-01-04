@@ -11,6 +11,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { useRazorpay } from "@/hooks/useRazorpay";
 import {
   Calendar as CalendarIcon,
   Clock,
@@ -19,6 +20,7 @@ import {
   CreditCard,
   CheckCircle,
   Star,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -47,7 +49,8 @@ const timeSlots = [
   "05:30 PM",
 ];
 
-type BookingStep = "datetime" | "confirm" | "success";
+type BookingStep = "datetime" | "confirm" | "payment" | "success";
+type PaymentMethod = "online" | "hospital";
 
 export function BookingDialog({
   open,
@@ -58,14 +61,19 @@ export function BookingDialog({
   const [step, setStep] = useState<BookingStep>("datetime");
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [selectedTime, setSelectedTime] = useState<string>("");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("online");
+  const [isProcessing, setIsProcessing] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { initiatePayment, isLoading: isPaymentLoading } = useRazorpay();
 
   const handleClose = () => {
     setStep("datetime");
     setSelectedDate(undefined);
     setSelectedTime("");
+    setPaymentMethod("online");
+    setIsProcessing(false);
     onOpenChange(false);
   };
 
@@ -92,16 +100,53 @@ export function BookingDialog({
     setStep("confirm");
   };
 
-  const handleConfirmBooking = async () => {
-    // In a real app, this would save to the database
-    // For now, we'll simulate the booking
+  const handlePayOnline = async () => {
+    setIsProcessing(true);
+    
+    initiatePayment({
+      amount: doctor.fee,
+      name: `Consultation with ${doctor.name}`,
+      description: `Appointment at ${hospital.name} on ${selectedDate ? format(selectedDate, "MMM d, yyyy") : ""} at ${selectedTime}`,
+      prefill: {
+        name: user?.email?.split("@")[0] || "",
+        email: user?.email || "",
+      },
+      notes: {
+        doctor_id: doctor.id?.toString() || "",
+        hospital_id: hospital.id?.toString() || "",
+        appointment_date: selectedDate ? format(selectedDate, "yyyy-MM-dd") : "",
+        appointment_time: selectedTime,
+      },
+      onSuccess: (response) => {
+        console.log("Payment successful:", response);
+        setIsProcessing(false);
+        setStep("success");
+        toast({
+          title: "Payment Successful!",
+          description: `Your appointment with ${doctor.name} has been confirmed.`,
+        });
+      },
+      onError: (error) => {
+        console.error("Payment failed:", error);
+        setIsProcessing(false);
+        toast({
+          title: "Payment Failed",
+          description: error.message || "Something went wrong. Please try again.",
+          variant: "destructive",
+        });
+      },
+    });
+  };
+
+  const handlePayAtHospital = async () => {
+    setIsProcessing(true);
     try {
-      // Simulate API call
+      // Simulate booking confirmation
       await new Promise((resolve) => setTimeout(resolve, 1000));
       setStep("success");
       toast({
         title: "Appointment Booked!",
-        description: `Your appointment with ${doctor?.name} has been confirmed.`,
+        description: `Your appointment with ${doctor.name} has been confirmed. Please pay at the hospital.`,
       });
     } catch (error) {
       toast({
@@ -109,6 +154,16 @@ export function BookingDialog({
         description: "Something went wrong. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleConfirmBooking = () => {
+    if (paymentMethod === "online") {
+      handlePayOnline();
+    } else {
+      handlePayAtHospital();
     }
   };
 
@@ -233,7 +288,45 @@ export function BookingDialog({
                     <p className="font-medium text-foreground">₹{doctor.fee}</p>
                   </div>
                 </div>
-                <Badge variant="secondary">Pay at Hospital</Badge>
+              </div>
+
+              {/* Payment Method Selection */}
+              <div className="space-y-3">
+                <p className="text-sm font-medium text-foreground">Select Payment Method</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => setPaymentMethod("online")}
+                    className={cn(
+                      "p-4 rounded-xl border-2 transition-all text-left",
+                      paymentMethod === "online"
+                        ? "border-hospital bg-hospital/5"
+                        : "border-border hover:border-hospital/50"
+                    )}
+                  >
+                    <CreditCard className={cn(
+                      "h-5 w-5 mb-2",
+                      paymentMethod === "online" ? "text-hospital" : "text-muted-foreground"
+                    )} />
+                    <p className="font-medium text-sm">Pay Online</p>
+                    <p className="text-xs text-muted-foreground">Pay now via Razorpay</p>
+                  </button>
+                  <button
+                    onClick={() => setPaymentMethod("hospital")}
+                    className={cn(
+                      "p-4 rounded-xl border-2 transition-all text-left",
+                      paymentMethod === "hospital"
+                        ? "border-hospital bg-hospital/5"
+                        : "border-border hover:border-hospital/50"
+                    )}
+                  >
+                    <MapPin className={cn(
+                      "h-5 w-5 mb-2",
+                      paymentMethod === "hospital" ? "text-hospital" : "text-muted-foreground"
+                    )} />
+                    <p className="font-medium text-sm">Pay at Hospital</p>
+                    <p className="text-xs text-muted-foreground">Pay when you visit</p>
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -242,6 +335,7 @@ export function BookingDialog({
                 variant="outline"
                 className="flex-1"
                 onClick={() => setStep("datetime")}
+                disabled={isProcessing || isPaymentLoading}
               >
                 Back
               </Button>
@@ -249,8 +343,18 @@ export function BookingDialog({
                 variant="hospital"
                 className="flex-1"
                 onClick={handleConfirmBooking}
+                disabled={isProcessing || isPaymentLoading}
               >
-                Confirm Booking
+                {isProcessing || isPaymentLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Processing...
+                  </>
+                ) : paymentMethod === "online" ? (
+                  `Pay ₹${doctor.fee}`
+                ) : (
+                  "Confirm Booking"
+                )}
               </Button>
             </div>
           </div>
