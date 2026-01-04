@@ -14,6 +14,66 @@ export type Database = {
   }
   public: {
     Tables: {
+      appointments: {
+        Row: {
+          appointment_date: string
+          appointment_time: string
+          consultation_fee: number
+          created_at: string
+          doctor_image: string | null
+          doctor_name: string
+          doctor_specialty: string | null
+          hospital_location: string | null
+          hospital_name: string
+          id: string
+          payment_method: string
+          payment_status: string
+          razorpay_order_id: string | null
+          razorpay_payment_id: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          appointment_date: string
+          appointment_time: string
+          consultation_fee: number
+          created_at?: string
+          doctor_image?: string | null
+          doctor_name: string
+          doctor_specialty?: string | null
+          hospital_location?: string | null
+          hospital_name: string
+          id?: string
+          payment_method?: string
+          payment_status?: string
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          appointment_date?: string
+          appointment_time?: string
+          consultation_fee?: number
+          created_at?: string
+          doctor_image?: string | null
+          doctor_name?: string
+          doctor_specialty?: string | null
+          hospital_location?: string | null
+          hospital_name?: string
+          id?: string
+          payment_method?: string
+          payment_status?: string
+          razorpay_order_id?: string | null
+          razorpay_payment_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       payment_history: {
         Row: {
           amount: number

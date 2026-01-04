@@ -8,10 +8,10 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useRazorpay } from "@/hooks/useRazorpay";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Calendar as CalendarIcon,
   Clock,
@@ -100,6 +100,32 @@ export function BookingDialog({
     setStep("confirm");
   };
 
+  const saveAppointment = async (paymentId?: string, orderId?: string) => {
+    if (!user || !selectedDate) return;
+
+    const { error } = await supabase.from("appointments").insert({
+      user_id: user.id,
+      doctor_name: doctor.name,
+      doctor_specialty: doctor.specialty,
+      doctor_image: doctor.image,
+      hospital_name: hospital.name,
+      hospital_location: hospital.location || hospital.address,
+      appointment_date: format(selectedDate, "yyyy-MM-dd"),
+      appointment_time: selectedTime,
+      consultation_fee: doctor.fee,
+      payment_method: paymentMethod,
+      payment_status: paymentMethod === "online" ? "paid" : "pending",
+      razorpay_payment_id: paymentId || null,
+      razorpay_order_id: orderId || null,
+      status: "confirmed",
+    });
+
+    if (error) {
+      console.error("Failed to save appointment:", error);
+      throw error;
+    }
+  };
+
   const handlePayOnline = async () => {
     setIsProcessing(true);
     
@@ -117,14 +143,23 @@ export function BookingDialog({
         appointment_date: selectedDate ? format(selectedDate, "yyyy-MM-dd") : "",
         appointment_time: selectedTime,
       },
-      onSuccess: (response) => {
+      onSuccess: async (response) => {
         console.log("Payment successful:", response);
+        try {
+          await saveAppointment(response.razorpay_payment_id, response.razorpay_order_id);
+          setStep("success");
+          toast({
+            title: "Payment Successful!",
+            description: `Your appointment with ${doctor.name} has been confirmed.`,
+          });
+        } catch (error) {
+          toast({
+            title: "Booking Error",
+            description: "Payment was successful but failed to save appointment. Please contact support.",
+            variant: "destructive",
+          });
+        }
         setIsProcessing(false);
-        setStep("success");
-        toast({
-          title: "Payment Successful!",
-          description: `Your appointment with ${doctor.name} has been confirmed.`,
-        });
       },
       onError: (error) => {
         console.error("Payment failed:", error);
@@ -141,8 +176,7 @@ export function BookingDialog({
   const handlePayAtHospital = async () => {
     setIsProcessing(true);
     try {
-      // Simulate booking confirmation
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await saveAppointment();
       setStep("success");
       toast({
         title: "Appointment Booked!",

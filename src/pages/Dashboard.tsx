@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/integrations/supabase/client";
 import { 
   User, 
   CreditCard, 
@@ -29,11 +30,13 @@ import {
   Mail,
   Shield,
   Crown,
-  LogOut
+  LogOut,
+  Loader2
 } from "lucide-react";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { format } from "date-fns";
 
 // Mock user data - replace with real data from backend
 const mockUser = {
@@ -55,12 +58,6 @@ const mockWallet = {
   referralCoins: 125,
 };
 
-const mockHospitalBookings = [
-  { id: "H001", hospital: "Apollo Hospital", doctor: "Dr. Sharma", date: "2024-12-20", time: "10:00 AM", status: "confirmed", amount: 500 },
-  { id: "H002", hospital: "Max Healthcare", doctor: "Dr. Patel", date: "2024-12-18", time: "2:30 PM", status: "completed", amount: 750 },
-  { id: "H003", hospital: "Fortis Hospital", doctor: "Dr. Singh", date: "2024-12-15", time: "11:00 AM", status: "cancelled", amount: 600 },
-];
-
 const mockHotelBookings = [
   { id: "HT001", hotel: "Taj Palace", location: "New Delhi", checkIn: "2024-12-25", checkOut: "2024-12-28", rooms: 1, status: "confirmed", amount: 15000 },
   { id: "HT002", hotel: "Oberoi Mumbai", location: "Mumbai", checkIn: "2024-11-10", checkOut: "2024-11-12", rooms: 2, status: "completed", amount: 28000 },
@@ -75,6 +72,20 @@ const mockRideBookings = [
   { id: "R001", from: "Home", to: "Airport", date: "2024-12-20", time: "6:00 AM", vehicle: "Sedan", status: "completed", amount: 850, driver: "Rajesh K." },
   { id: "R002", from: "Office", to: "Mall", date: "2024-12-19", time: "5:30 PM", vehicle: "Hatchback", status: "completed", amount: 320, driver: "Amit S." },
 ];
+
+interface Appointment {
+  id: string;
+  doctor_name: string;
+  doctor_specialty: string | null;
+  hospital_name: string;
+  appointment_date: string;
+  appointment_time: string;
+  consultation_fee: number;
+  payment_method: string;
+  payment_status: string;
+  status: string;
+  created_at: string;
+}
 
 const StatusBadge = ({ status }: { status: string }) => {
   const config: Record<string, { variant: "default" | "secondary" | "destructive" | "outline"; icon: React.ReactNode }> = {
@@ -96,9 +107,33 @@ const StatusBadge = ({ status }: { status: string }) => {
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [isLoadingAppointments, setIsLoadingAppointments] = useState(true);
   const { subscription, isLoading: isSubLoading } = useSubscription();
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+
+  // Fetch appointments from database
+  useEffect(() => {
+    const fetchAppointments = async () => {
+      if (!user) return;
+      
+      setIsLoadingAppointments(true);
+      const { data, error } = await supabase
+        .from("appointments")
+        .select("*")
+        .order("appointment_date", { ascending: false });
+
+      if (error) {
+        console.error("Failed to fetch appointments:", error);
+      } else {
+        setAppointments(data || []);
+      }
+      setIsLoadingAppointments(false);
+    };
+
+    fetchAppointments();
+  }, [user]);
 
   // Determine membership info from subscription
   const membershipPlan = subscription?.plan_name || null;
@@ -241,7 +276,7 @@ const Dashboard = () => {
                   <div>
                     <p className="text-xs text-muted-foreground">Total Bookings</p>
                     <p className="text-xl font-bold text-foreground">
-                      {mockHospitalBookings.length + mockHotelBookings.length + mockTravelBookings.length + mockRideBookings.length}
+                      {appointments.length + mockHotelBookings.length + mockTravelBookings.length + mockRideBookings.length}
                     </p>
                   </div>
                 </div>
@@ -302,15 +337,23 @@ const Dashboard = () => {
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    {mockHospitalBookings.slice(0, 2).map((booking) => (
-                      <div key={booking.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                        <div>
-                          <p className="font-medium text-foreground">{booking.hospital}</p>
-                          <p className="text-sm text-muted-foreground">{booking.doctor} • {booking.date}</p>
-                        </div>
-                        <StatusBadge status={booking.status} />
+                    {isLoadingAppointments ? (
+                      <div className="flex items-center justify-center py-4">
+                        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
                       </div>
-                    ))}
+                    ) : appointments.length === 0 ? (
+                      <p className="text-center text-muted-foreground py-4">No appointments yet</p>
+                    ) : (
+                      appointments.slice(0, 2).map((appointment) => (
+                        <div key={appointment.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                          <div>
+                            <p className="font-medium text-foreground">{appointment.hospital_name}</p>
+                            <p className="text-sm text-muted-foreground">{appointment.doctor_name} • {format(new Date(appointment.appointment_date), "MMM d, yyyy")}</p>
+                          </div>
+                          <StatusBadge status={appointment.status} />
+                        </div>
+                      ))
+                    )}
                     <Button variant="ghost" className="w-full" onClick={() => setActiveTab("hospital")}>
                       View All Hospital Bookings
                     </Button>
@@ -433,22 +476,36 @@ const Dashboard = () => {
                         </tr>
                       </thead>
                       <tbody>
-                        {mockHospitalBookings.map((booking) => (
-                          <tr key={booking.id} className="border-b border-border/50 hover:bg-muted/30">
-                            <td className="py-3 px-4 font-mono text-sm">{booking.id}</td>
-                            <td className="py-3 px-4">{booking.hospital}</td>
-                            <td className="py-3 px-4">{booking.doctor}</td>
-                            <td className="py-3 px-4">{booking.date} • {booking.time}</td>
-                            <td className="py-3 px-4">₹{booking.amount}</td>
-                            <td className="py-3 px-4"><StatusBadge status={booking.status} /></td>
-                            <td className="py-3 px-4">
-                              <div className="flex gap-2">
-                                <Button variant="ghost" size="sm"><Eye className="w-4 h-4" /></Button>
-                                <Button variant="ghost" size="sm"><Download className="w-4 h-4" /></Button>
-                              </div>
+                        {isLoadingAppointments ? (
+                          <tr>
+                            <td colSpan={7} className="py-8 text-center">
+                              <Loader2 className="w-6 h-6 animate-spin mx-auto text-muted-foreground" />
                             </td>
                           </tr>
-                        ))}
+                        ) : appointments.length === 0 ? (
+                          <tr>
+                            <td colSpan={7} className="py-8 text-center text-muted-foreground">
+                              No appointments found. Book your first appointment!
+                            </td>
+                          </tr>
+                        ) : (
+                          appointments.map((appointment) => (
+                            <tr key={appointment.id} className="border-b border-border/50 hover:bg-muted/30">
+                              <td className="py-3 px-4 font-mono text-sm">{appointment.id.slice(0, 8)}</td>
+                              <td className="py-3 px-4">{appointment.hospital_name}</td>
+                              <td className="py-3 px-4">{appointment.doctor_name}</td>
+                              <td className="py-3 px-4">{format(new Date(appointment.appointment_date), "MMM d, yyyy")} • {appointment.appointment_time}</td>
+                              <td className="py-3 px-4">₹{appointment.consultation_fee}</td>
+                              <td className="py-3 px-4"><StatusBadge status={appointment.status} /></td>
+                              <td className="py-3 px-4">
+                                <div className="flex gap-2">
+                                  <Button variant="ghost" size="sm"><Eye className="w-4 h-4" /></Button>
+                                  <Button variant="ghost" size="sm"><Download className="w-4 h-4" /></Button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                        )}
                       </tbody>
                     </table>
                   </div>
