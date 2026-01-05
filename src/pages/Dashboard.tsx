@@ -7,6 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { AppointmentActions } from "@/components/appointments/AppointmentActions";
+import { AddMoneyDialog } from "@/components/wallet/AddMoneyDialog";
+import { EditProfileDialog } from "@/components/profile/EditProfileDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { 
   User, 
@@ -32,32 +34,16 @@ import {
   Shield,
   Crown,
   LogOut,
-  Loader2
+  Loader2,
+  Plus,
+  ArrowUpRight,
+  ArrowDownLeft
 } from "lucide-react";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/hooks/useAuth";
+import { useWallet } from "@/hooks/useWallet";
 import { toast } from "sonner";
 import { format } from "date-fns";
-
-// Mock user data - replace with real data from backend
-const mockUser = {
-  name: "Rahul Sharma",
-  email: "rahul.sharma@email.com",
-  phone: "+91 98765 43210",
-  avatar: null,
-  verified: true,
-  aadhaarVerified: true,
-  joinedDate: "2024-01-15",
-  referralCode: "RAHUL2024",
-  referralEarnings: 1250,
-};
-
-const mockWallet = {
-  balance: 2450,
-  pendingWithdrawal: 500,
-  totalEarned: 5200,
-  referralCoins: 125,
-};
 
 const mockHotelBookings = [
   { id: "HT001", hotel: "Taj Palace", location: "New Delhi", checkIn: "2024-12-25", checkOut: "2024-12-28", rooms: 1, status: "confirmed", amount: 15000 },
@@ -110,9 +96,15 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [isLoadingAppointments, setIsLoadingAppointments] = useState(true);
+  const [isAddMoneyOpen, setIsAddMoneyOpen] = useState(false);
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const { subscription, isLoading: isSubLoading } = useSubscription();
   const { user, signOut } = useAuth();
+  const { wallet, transactions, isLoading: isWalletLoading, refetch: refetchWallet } = useWallet(user?.id);
   const navigate = useNavigate();
+
+  // Generate referral code from user id
+  const referralCode = user?.id?.slice(0, 8).toUpperCase() || "REFER123";
 
   // Fetch appointments from database
   const fetchAppointments = useCallback(async () => {
@@ -153,6 +145,11 @@ const Dashboard = () => {
       toast.success("Signed out successfully");
       navigate("/");
     }
+  };
+
+  const handleCopyReferralCode = () => {
+    navigator.clipboard.writeText(referralCode);
+    toast.success("Referral code copied!");
   };
 
   return (
@@ -225,7 +222,7 @@ const Dashboard = () => {
                   </Link>
                 )}
 
-                <Button variant="outline" size="sm">
+                <Button variant="outline" size="sm" onClick={() => setIsEditProfileOpen(true)}>
                   <Edit className="w-4 h-4 mr-2" />
                   Edit Profile
                 </Button>
@@ -248,7 +245,7 @@ const Dashboard = () => {
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">Wallet Balance</p>
-                    <p className="text-xl font-bold text-foreground">₹{mockWallet.balance.toLocaleString()}</p>
+                    <p className="text-xl font-bold text-foreground">₹{(wallet?.balance || 0).toLocaleString()}</p>
                   </div>
                 </div>
               </CardContent>
@@ -262,7 +259,7 @@ const Dashboard = () => {
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">Referral Coins</p>
-                    <p className="text-xl font-bold text-foreground">{mockWallet.referralCoins}</p>
+                    <p className="text-xl font-bold text-foreground">{wallet?.referral_coins || 0}</p>
                   </div>
                 </div>
               </CardContent>
@@ -292,7 +289,7 @@ const Dashboard = () => {
                   </div>
                   <div>
                     <p className="text-xs text-muted-foreground">Total Earned</p>
-                    <p className="text-xl font-bold text-foreground">₹{mockWallet.totalEarned.toLocaleString()}</p>
+                    <p className="text-xl font-bold text-foreground">₹{(wallet?.total_earned || 0).toLocaleString()}</p>
                   </div>
                 </div>
               </CardContent>
@@ -444,9 +441,9 @@ const Dashboard = () => {
                     </div>
                     <div className="flex items-center gap-4">
                       <div className="px-4 py-2 rounded-lg bg-background border border-border font-mono text-lg">
-                        {mockUser.referralCode}
+                        {referralCode}
                       </div>
-                      <Button>Copy Code</Button>
+                      <Button onClick={handleCopyReferralCode}>Copy Code</Button>
                     </div>
                   </div>
                 </CardContent>
@@ -676,27 +673,58 @@ const Dashboard = () => {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
                       <div className="p-4 rounded-lg bg-primary/10 border border-primary/20">
                         <p className="text-sm text-muted-foreground">Available Balance</p>
-                        <p className="text-2xl font-bold text-primary">₹{mockWallet.balance.toLocaleString()}</p>
-                      </div>
-                      <div className="p-4 rounded-lg bg-muted/50">
-                        <p className="text-sm text-muted-foreground">Pending Withdrawal</p>
-                        <p className="text-2xl font-bold text-foreground">₹{mockWallet.pendingWithdrawal}</p>
+                        <p className="text-2xl font-bold text-primary">₹{(wallet?.balance || 0).toLocaleString()}</p>
                       </div>
                       <div className="p-4 rounded-lg bg-muted/50">
                         <p className="text-sm text-muted-foreground">Total Earned</p>
-                        <p className="text-2xl font-bold text-foreground">₹{mockWallet.totalEarned.toLocaleString()}</p>
+                        <p className="text-2xl font-bold text-foreground">₹{(wallet?.total_earned || 0).toLocaleString()}</p>
                       </div>
                       <div className="p-4 rounded-lg bg-muted/50">
                         <p className="text-sm text-muted-foreground">Referral Coins</p>
-                        <p className="text-2xl font-bold text-foreground">{mockWallet.referralCoins}</p>
+                        <p className="text-2xl font-bold text-foreground">{wallet?.referral_coins || 0}</p>
                       </div>
                     </div>
+
+                    {/* Transaction History */}
+                    <div className="mb-6">
+                      <h4 className="font-semibold mb-3">Recent Transactions</h4>
+                      {transactions.length === 0 ? (
+                        <p className="text-center text-muted-foreground py-4">No transactions yet</p>
+                      ) : (
+                        <div className="space-y-2 max-h-48 overflow-y-auto">
+                          {transactions.slice(0, 5).map((tx) => (
+                            <div key={tx.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30">
+                              <div className="flex items-center gap-3">
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${tx.type === 'credit' ? 'bg-green-500/20' : 'bg-red-500/20'}`}>
+                                  {tx.type === 'credit' ? (
+                                    <ArrowDownLeft className="w-4 h-4 text-green-500" />
+                                  ) : (
+                                    <ArrowUpRight className="w-4 h-4 text-red-500" />
+                                  )}
+                                </div>
+                                <div>
+                                  <p className="text-sm font-medium">{tx.description || (tx.type === 'credit' ? 'Added' : 'Spent')}</p>
+                                  <p className="text-xs text-muted-foreground">{format(new Date(tx.created_at), 'MMM d, yyyy')}</p>
+                                </div>
+                              </div>
+                              <p className={`font-semibold ${tx.type === 'credit' ? 'text-green-500' : 'text-red-500'}`}>
+                                {tx.type === 'credit' ? '+' : '-'}₹{tx.amount.toLocaleString()}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
                     <div className="flex gap-3">
-                      <Button className="flex-1">Withdraw Money</Button>
-                      <Button variant="outline" className="flex-1">Add Money</Button>
+                      <Button className="flex-1" variant="outline" disabled>Withdraw Money</Button>
+                      <Button className="flex-1" onClick={() => setIsAddMoneyOpen(true)}>
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add Money
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
@@ -710,14 +738,14 @@ const Dashboard = () => {
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="text-center p-4 rounded-lg bg-gradient-to-br from-primary/20 to-primary/5">
-                      <p className="text-sm text-muted-foreground mb-1">Total Referral Earnings</p>
-                      <p className="text-3xl font-bold text-primary">₹{mockUser.referralEarnings.toLocaleString()}</p>
+                      <p className="text-sm text-muted-foreground mb-1">Referral Coins</p>
+                      <p className="text-3xl font-bold text-primary">{wallet?.referral_coins || 0}</p>
                     </div>
                     <div className="p-3 rounded-lg bg-muted/50 text-center">
                       <p className="text-xs text-muted-foreground mb-1">Your Referral Code</p>
-                      <p className="font-mono font-bold text-lg">{mockUser.referralCode}</p>
+                      <p className="font-mono font-bold text-lg">{referralCode}</p>
                     </div>
-                    <Button className="w-full" variant="outline">
+                    <Button className="w-full" variant="outline" onClick={handleCopyReferralCode}>
                       Share & Earn More
                     </Button>
                   </CardContent>
@@ -729,6 +757,27 @@ const Dashboard = () => {
       </main>
 
       <Footer />
+
+      {/* Add Money Dialog */}
+      <AddMoneyDialog
+        open={isAddMoneyOpen}
+        onOpenChange={setIsAddMoneyOpen}
+        walletId={wallet?.id || null}
+        userId={user?.id || ''}
+        userEmail={userEmail}
+        userName={userName}
+        onSuccess={refetchWallet}
+      />
+
+      {/* Edit Profile Dialog */}
+      <EditProfileDialog
+        open={isEditProfileOpen}
+        onOpenChange={setIsEditProfileOpen}
+        userId={user?.id || ''}
+        currentName={userName}
+        currentPhone={userPhone}
+        onSuccess={() => window.location.reload()}
+      />
     </div>
   );
 };
