@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { AppointmentActions } from "@/components/appointments/AppointmentActions";
 import { supabase } from "@/integrations/supabase/client";
 import { 
   User, 
@@ -114,26 +115,26 @@ const Dashboard = () => {
   const navigate = useNavigate();
 
   // Fetch appointments from database
-  useEffect(() => {
-    const fetchAppointments = async () => {
-      if (!user) return;
-      
-      setIsLoadingAppointments(true);
-      const { data, error } = await supabase
-        .from("appointments")
-        .select("*")
-        .order("appointment_date", { ascending: false });
+  const fetchAppointments = useCallback(async () => {
+    if (!user) return;
+    
+    setIsLoadingAppointments(true);
+    const { data, error } = await supabase
+      .from("appointments")
+      .select("*")
+      .order("appointment_date", { ascending: false });
 
-      if (error) {
-        console.error("Failed to fetch appointments:", error);
-      } else {
-        setAppointments(data || []);
-      }
-      setIsLoadingAppointments(false);
-    };
-
-    fetchAppointments();
+    if (error) {
+      console.error("Failed to fetch appointments:", error);
+    } else {
+      setAppointments(data || []);
+    }
+    setIsLoadingAppointments(false);
   }, [user]);
+
+  useEffect(() => {
+    fetchAppointments();
+  }, [fetchAppointments]);
 
   // Determine membership info from subscription
   const membershipPlan = subscription?.plan_name || null;
@@ -500,7 +501,7 @@ const Dashboard = () => {
                               <td className="py-3 px-4">
                                 <div className="flex gap-2">
                                   <Button variant="ghost" size="sm"><Eye className="w-4 h-4" /></Button>
-                                  <Button variant="ghost" size="sm"><Download className="w-4 h-4" /></Button>
+                                  <AppointmentActions appointment={appointment} onUpdate={fetchAppointments} />
                                 </div>
                               </td>
                             </tr>
