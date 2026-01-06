@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,11 +14,13 @@ import {
   Loader2,
   UserCheck,
   Shield,
-  Users
+  Users,
+  Gift
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth, AppRole } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 type AuthMode = "login" | "signup";
 
@@ -44,6 +46,9 @@ const roleOptions: { value: AppRole; label: string; description: string; icon: R
 ];
 
 export default function Auth() {
+  const [searchParams] = useSearchParams();
+  const referralCodeFromUrl = searchParams.get("ref");
+  
   const [mode, setMode] = useState<AuthMode>("login");
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -53,11 +58,20 @@ export default function Auth() {
     phone: "",
     password: "",
     role: "user" as AppRole,
+    referralCode: referralCodeFromUrl || "",
   });
 
   const { signIn, signUp, isAuthenticated, isLoading, getDashboardPath } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Set signup mode if referral code is present
+  useEffect(() => {
+    if (referralCodeFromUrl) {
+      setMode("signup");
+      setFormData(prev => ({ ...prev, referralCode: referralCodeFromUrl }));
+    }
+  }, [referralCodeFromUrl]);
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -98,7 +112,7 @@ export default function Auth() {
           return;
         }
 
-        const { error } = await signUp(
+        const { data: signUpData, error } = await signUp(
           formData.email, 
           formData.password, 
           formData.name, 
@@ -113,7 +127,23 @@ export default function Auth() {
             toast.error(error.message || "Failed to create account");
           }
         } else {
-          toast.success("Account created successfully! You can now sign in.");
+          // Process referral if code was provided
+          if (formData.referralCode && signUpData?.user?.id) {
+            try {
+              await supabase.functions.invoke("process-referral", {
+                body: {
+                  referral_code: formData.referralCode,
+                  referee_user_id: signUpData.user.id,
+                },
+              });
+              toast.success("Account created! You received 25 referral coins as a welcome bonus.");
+            } catch (refErr) {
+              console.error("Referral processing failed:", refErr);
+              toast.success("Account created successfully! You can now sign in.");
+            }
+          } else {
+            toast.success("Account created successfully! You can now sign in.");
+          }
           setMode("login");
         }
       }
@@ -262,7 +292,30 @@ export default function Auth() {
               </div>
             )}
 
-            {/* Password */}
+            {/* Referral Code - Signup only */}
+            {mode === "signup" && (
+              <div className="space-y-2">
+                <Label htmlFor="referralCode">Referral Code (Optional)</Label>
+                <div className="relative">
+                  <Gift className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <Input
+                    id="referralCode"
+                    type="text"
+                    placeholder="Enter referral code"
+                    value={formData.referralCode}
+                    onChange={(e) =>
+                      setFormData({ ...formData, referralCode: e.target.value.toUpperCase() })
+                    }
+                    className="pl-10"
+                    maxLength={8}
+                  />
+                </div>
+                {formData.referralCode && (
+                  <p className="text-xs text-green-500">You'll receive 25 bonus coins on signup!</p>
+                )}
+              </div>
+            )}
+
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
               <div className="relative">

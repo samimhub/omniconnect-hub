@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { AppointmentActions } from "@/components/appointments/AppointmentActions";
 import { AddMoneyDialog } from "@/components/wallet/AddMoneyDialog";
+import { WithdrawMoneyDialog } from "@/components/wallet/WithdrawMoneyDialog";
 import { EditProfileDialog } from "@/components/profile/EditProfileDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { 
@@ -42,6 +43,7 @@ import {
 import { useSubscription } from "@/hooks/useSubscription";
 import { useAuth } from "@/hooks/useAuth";
 import { useWallet } from "@/hooks/useWallet";
+import { useReferral } from "@/hooks/useReferral";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -97,14 +99,13 @@ const Dashboard = () => {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [isLoadingAppointments, setIsLoadingAppointments] = useState(true);
   const [isAddMoneyOpen, setIsAddMoneyOpen] = useState(false);
+  const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const { subscription, isLoading: isSubLoading } = useSubscription();
   const { user, signOut } = useAuth();
   const { wallet, transactions, isLoading: isWalletLoading, refetch: refetchWallet } = useWallet(user?.id);
+  const { referralCode, totalReferrals, getReferralLink, refetch: refetchReferral } = useReferral(user?.id);
   const navigate = useNavigate();
-
-  // Generate referral code from user id
-  const referralCode = user?.id?.slice(0, 8).toUpperCase() || "REFER123";
 
   // Fetch appointments from database
   const fetchAppointments = useCallback(async () => {
@@ -148,8 +149,18 @@ const Dashboard = () => {
   };
 
   const handleCopyReferralCode = () => {
-    navigator.clipboard.writeText(referralCode);
-    toast.success("Referral code copied!");
+    if (referralCode) {
+      navigator.clipboard.writeText(referralCode);
+      toast.success("Referral code copied!");
+    }
+  };
+
+  const handleShareReferral = () => {
+    const link = getReferralLink();
+    if (link) {
+      navigator.clipboard.writeText(link);
+      toast.success("Referral link copied! Share it with friends.");
+    }
   };
 
   return (
@@ -720,7 +731,14 @@ const Dashboard = () => {
                     </div>
 
                     <div className="flex gap-3">
-                      <Button className="flex-1" variant="outline" disabled>Withdraw Money</Button>
+                      <Button 
+                        className="flex-1" 
+                        variant="outline" 
+                        onClick={() => setIsWithdrawOpen(true)}
+                        disabled={!wallet || wallet.balance < 100}
+                      >
+                        Withdraw Money
+                      </Button>
                       <Button className="flex-1" onClick={() => setIsAddMoneyOpen(true)}>
                         <Plus className="w-4 h-4 mr-2" />
                         Add Money
@@ -741,13 +759,23 @@ const Dashboard = () => {
                       <p className="text-sm text-muted-foreground mb-1">Referral Coins</p>
                       <p className="text-3xl font-bold text-primary">{wallet?.referral_coins || 0}</p>
                     </div>
+                    <div className="text-center p-3 rounded-lg bg-muted/50">
+                      <p className="text-sm text-muted-foreground mb-1">Total Referrals</p>
+                      <p className="text-xl font-bold text-foreground">{totalReferrals}</p>
+                    </div>
                     <div className="p-3 rounded-lg bg-muted/50 text-center">
                       <p className="text-xs text-muted-foreground mb-1">Your Referral Code</p>
-                      <p className="font-mono font-bold text-lg">{referralCode}</p>
+                      <p className="font-mono font-bold text-lg">{referralCode || "Loading..."}</p>
                     </div>
-                    <Button className="w-full" variant="outline" onClick={handleCopyReferralCode}>
-                      Share & Earn More
+                    <Button className="w-full" variant="outline" onClick={handleCopyReferralCode} disabled={!referralCode}>
+                      Copy Code
                     </Button>
+                    <Button className="w-full" onClick={handleShareReferral} disabled={!referralCode}>
+                      Share & Earn ₹50
+                    </Button>
+                    <p className="text-xs text-center text-muted-foreground">
+                      Invite friends and earn ₹50 coins when they sign up!
+                    </p>
                   </CardContent>
                 </Card>
               </div>
@@ -778,6 +806,18 @@ const Dashboard = () => {
         currentPhone={userPhone}
         onSuccess={() => window.location.reload()}
       />
+
+      {/* Withdraw Money Dialog */}
+      {wallet && (
+        <WithdrawMoneyDialog
+          open={isWithdrawOpen}
+          onOpenChange={setIsWithdrawOpen}
+          walletId={wallet.id}
+          userId={user?.id || ''}
+          balance={wallet.balance}
+          onSuccess={refetchWallet}
+        />
+      )}
     </div>
   );
 };
