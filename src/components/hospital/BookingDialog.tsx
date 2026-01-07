@@ -12,6 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useRazorpay } from "@/hooks/useRazorpay";
 import { supabase } from "@/integrations/supabase/client";
+import { MembershipOfferStep } from "@/components/booking/MembershipOfferStep";
 import {
   Calendar as CalendarIcon,
   Clock,
@@ -21,6 +22,8 @@ import {
   CheckCircle,
   Star,
   Loader2,
+  Crown,
+  ArrowLeft,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -49,7 +52,7 @@ const timeSlots = [
   "05:30 PM",
 ];
 
-type BookingStep = "datetime" | "confirm" | "payment" | "success";
+type BookingStep = "datetime" | "membership" | "confirm" | "success";
 type PaymentMethod = "online" | "hospital";
 
 export function BookingDialog({
@@ -63,10 +66,16 @@ export function BookingDialog({
   const [selectedTime, setSelectedTime] = useState<string>("");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("online");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [appliedDiscount, setAppliedDiscount] = useState<number>(0);
+  const [membershipPlan, setMembershipPlan] = useState<string | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const { initiatePayment, isLoading: isPaymentLoading } = useRazorpay();
+
+  const originalFee = doctor?.fee || 0;
+  const discountAmount = Math.round((originalFee * appliedDiscount) / 100);
+  const finalFee = originalFee - discountAmount;
 
   const handleClose = () => {
     setStep("datetime");
@@ -74,6 +83,8 @@ export function BookingDialog({
     setSelectedTime("");
     setPaymentMethod("online");
     setIsProcessing(false);
+    setAppliedDiscount(0);
+    setMembershipPlan(null);
     onOpenChange(false);
   };
 
@@ -97,6 +108,18 @@ export function BookingDialog({
       return;
     }
 
+    setStep("membership");
+  };
+
+  const handleMembershipSkip = () => {
+    setAppliedDiscount(0);
+    setMembershipPlan(null);
+    setStep("confirm");
+  };
+
+  const handleMembershipPurchased = (discountPercentage: number, planName: string) => {
+    setAppliedDiscount(discountPercentage);
+    setMembershipPlan(planName);
     setStep("confirm");
   };
 
@@ -112,7 +135,7 @@ export function BookingDialog({
       hospital_location: hospital.location || hospital.address,
       appointment_date: format(selectedDate, "yyyy-MM-dd"),
       appointment_time: selectedTime,
-      consultation_fee: doctor.fee,
+      consultation_fee: finalFee,
       payment_method: paymentMethod,
       payment_status: paymentMethod === "online" ? "paid" : "pending",
       razorpay_payment_id: paymentId || null,
@@ -130,9 +153,9 @@ export function BookingDialog({
     setIsProcessing(true);
     
     initiatePayment({
-      amount: doctor.fee,
+      amount: finalFee,
       name: `Consultation with ${doctor.name}`,
-      description: `Appointment at ${hospital.name} on ${selectedDate ? format(selectedDate, "MMM d, yyyy") : ""} at ${selectedTime}`,
+      description: `Appointment at ${hospital.name} on ${selectedDate ? format(selectedDate, "MMM d, yyyy") : ""} at ${selectedTime}${appliedDiscount > 0 ? ` (${appliedDiscount}% discount applied)` : ""}`,
       prefill: {
         name: user?.email?.split("@")[0] || "",
         email: user?.email || "",
@@ -209,6 +232,7 @@ export function BookingDialog({
         <DialogHeader>
           <DialogTitle>
             {step === "datetime" && "Book Appointment"}
+            {step === "membership" && "Special Offer"}
             {step === "confirm" && "Confirm Booking"}
             {step === "success" && "Booking Confirmed!"}
           </DialogTitle>
@@ -288,7 +312,28 @@ export function BookingDialog({
           </div>
         )}
 
-        {/* Step 2: Confirmation */}
+        {/* Step 2: Membership Offer */}
+        {step === "membership" && (
+          <div className="space-y-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="mb-2"
+              onClick={() => setStep("datetime")}
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back
+            </Button>
+            <MembershipOfferStep
+              bookingAmount={originalFee}
+              onSkip={handleMembershipSkip}
+              onMembershipPurchased={handleMembershipPurchased}
+              isProcessing={isProcessing}
+            />
+          </div>
+        )}
+
+        {/* Step 3: Confirmation */}
         {step === "confirm" && (
           <div className="space-y-6">
             <div className="space-y-4">
@@ -314,14 +359,45 @@ export function BookingDialog({
                 </div>
               </div>
 
-              <div className="flex items-center justify-between p-4 rounded-xl bg-muted/50">
-                <div className="flex items-center gap-3">
+              {/* Pricing Breakdown */}
+              <div className="p-4 rounded-xl bg-muted/50 space-y-3">
+                <div className="flex items-center gap-3 mb-3">
                   <CreditCard className="h-5 w-5 text-hospital" />
-                  <div>
-                    <p className="text-sm text-muted-foreground">Consultation Fee</p>
-                    <p className="font-medium text-foreground">₹{doctor.fee}</p>
-                  </div>
+                  <p className="font-medium text-foreground">Payment Summary</p>
                 </div>
+                
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Consultation Fee</span>
+                  <span className={appliedDiscount > 0 ? "line-through text-muted-foreground" : "text-foreground"}>
+                    ₹{originalFee}
+                  </span>
+                </div>
+                
+                {appliedDiscount > 0 && (
+                  <>
+                    <div className="flex justify-between text-sm text-primary">
+                      <span className="flex items-center gap-2">
+                        <Crown className="h-4 w-4" />
+                        {membershipPlan} Discount ({appliedDiscount}%)
+                      </span>
+                      <span>- ₹{discountAmount}</span>
+                    </div>
+                    <div className="border-t pt-3 flex justify-between font-semibold">
+                      <span>Final Amount</span>
+                      <span className="text-lg text-primary">₹{finalFee}</span>
+                    </div>
+                    <div className="text-xs text-primary bg-primary/10 px-3 py-1.5 rounded-lg text-center">
+                      🎉 You're saving ₹{discountAmount} with your {membershipPlan} membership!
+                    </div>
+                  </>
+                )}
+                
+                {appliedDiscount === 0 && (
+                  <div className="border-t pt-3 flex justify-between font-semibold">
+                    <span>Total Amount</span>
+                    <span className="text-lg">₹{finalFee}</span>
+                  </div>
+                )}
               </div>
 
               {/* Payment Method Selection */}
@@ -368,7 +444,7 @@ export function BookingDialog({
               <Button
                 variant="outline"
                 className="flex-1"
-                onClick={() => setStep("datetime")}
+                onClick={() => setStep("membership")}
                 disabled={isProcessing || isPaymentLoading}
               >
                 Back
@@ -385,7 +461,7 @@ export function BookingDialog({
                     Processing...
                   </>
                 ) : paymentMethod === "online" ? (
-                  `Pay ₹${doctor.fee}`
+                  `Pay ₹${finalFee}`
                 ) : (
                   "Confirm Booking"
                 )}
