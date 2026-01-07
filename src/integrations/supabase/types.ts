@@ -74,6 +74,54 @@ export type Database = {
         }
         Relationships: []
       }
+      membership_plans: {
+        Row: {
+          created_at: string
+          description: string | null
+          discount_percentage: number
+          features: string[]
+          id: string
+          is_active: boolean
+          is_popular: boolean
+          modules: string[]
+          name: string
+          price_monthly: number
+          price_yearly: number
+          updated_at: string
+          validity_days: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          discount_percentage?: number
+          features?: string[]
+          id?: string
+          is_active?: boolean
+          is_popular?: boolean
+          modules?: string[]
+          name: string
+          price_monthly: number
+          price_yearly: number
+          updated_at?: string
+          validity_days?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          discount_percentage?: number
+          features?: string[]
+          id?: string
+          is_active?: boolean
+          is_popular?: boolean
+          modules?: string[]
+          name?: string
+          price_monthly?: number
+          price_yearly?: number
+          updated_at?: string
+          validity_days?: number
+        }
+        Relationships: []
+      }
       payment_history: {
         Row: {
           amount: number
@@ -205,6 +253,7 @@ export type Database = {
         Row: {
           billing_cycle: string
           created_at: string
+          discount_percentage: number | null
           end_date: string
           id: string
           plan_name: string
@@ -219,6 +268,7 @@ export type Database = {
         Insert: {
           billing_cycle?: string
           created_at?: string
+          discount_percentage?: number | null
           end_date: string
           id?: string
           plan_name: string
@@ -233,6 +283,7 @@ export type Database = {
         Update: {
           billing_cycle?: string
           created_at?: string
+          discount_percentage?: number | null
           end_date?: string
           id?: string
           plan_name?: string

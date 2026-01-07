@@ -43,6 +43,7 @@ import { Separator } from "@/components/ui/separator";
 import { Link, useNavigate } from "react-router-dom";
 import { useAdminSubscriptions } from "@/hooks/useAdminSubscriptions";
 import { useAuth } from "@/hooks/useAuth";
+import { AdminMembershipPlans } from "@/components/admin/AdminMembershipPlans";
 import { toast } from "sonner";
 
 // Mock Data
@@ -1493,80 +1494,7 @@ const AdminDashboard = () => {
         </TabsList>
 
         <TabsContent value="plans" className="mt-6">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-lg font-semibold">Manage Plans</h3>
-            <Button className="gap-2">
-              <Plus className="w-4 h-4" /> Create New Plan
-            </Button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {membershipPlans.map((plan) => (
-              <Card key={plan.id} className={`bg-card/50 backdrop-blur-sm border-border/50 relative overflow-hidden ${plan.popular ? 'ring-2 ring-primary' : ''}`}>
-                {plan.popular && (
-                  <div className="absolute top-3 right-3">
-                    <Badge className="bg-primary text-primary-foreground">Most Popular</Badge>
-                  </div>
-                )}
-                <CardHeader className="pb-4">
-                  <div className={`w-12 h-12 rounded-xl ${plan.color} flex items-center justify-center mb-3`}>
-                    <plan.icon className="w-6 h-6 text-white" />
-                  </div>
-                  <CardTitle className="text-xl">{plan.name}</CardTitle>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-3xl font-bold">₹{plan.monthlyPrice}</span>
-                    <span className="text-muted-foreground">/month</span>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    ₹{plan.yearlyPrice}/year <Badge variant="outline" className="ml-1 text-emerald-400 border-emerald-400/30">Save {plan.discount}%</Badge>
-                  </p>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-2">Modules Access:</p>
-                    <div className="flex flex-wrap gap-1">
-                      {plan.modules.map((module) => (
-                        <Badge key={module} variant="outline" className="text-xs">
-                          {module}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                  <Separator />
-                  <div className="space-y-2">
-                    {plan.features.slice(0, 4).map((feature, idx) => (
-                      <div key={idx} className="flex items-center gap-2 text-sm">
-                        <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                        <span className="text-muted-foreground">{feature}</span>
-                      </div>
-                    ))}
-                    {plan.features.length > 4 && (
-                      <p className="text-xs text-primary cursor-pointer">+{plan.features.length - 4} more features</p>
-                    )}
-                  </div>
-                  <Separator />
-                  <div className="grid grid-cols-2 gap-4 text-center">
-                    <div>
-                      <p className="text-2xl font-bold">{plan.subscribers.toLocaleString()}</p>
-                      <p className="text-xs text-muted-foreground">Subscribers</p>
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold text-emerald-400">₹{(plan.revenue / 100000).toFixed(1)}L</p>
-                      <p className="text-xs text-muted-foreground">Revenue</p>
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" className="flex-1">
-                      <Edit className="w-4 h-4 mr-1" /> Edit
-                    </Button>
-                    <Button variant="ghost" size="sm" className="px-2">
-                      <MoreVertical className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          <AdminMembershipPlans />
         </TabsContent>
 
         <TabsContent value="subscribers" className="mt-6">
