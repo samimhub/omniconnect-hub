@@ -10,6 +10,7 @@ import { AppointmentActions } from "@/components/appointments/AppointmentActions
 import { AddMoneyDialog } from "@/components/wallet/AddMoneyDialog";
 import { WithdrawMoneyDialog } from "@/components/wallet/WithdrawMoneyDialog";
 import { EditProfileDialog } from "@/components/profile/EditProfileDialog";
+import { UpgradeMembershipDialog } from "@/components/membership/UpgradeMembershipDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { 
   User, 
@@ -101,7 +102,8 @@ const Dashboard = () => {
   const [isAddMoneyOpen, setIsAddMoneyOpen] = useState(false);
   const [isWithdrawOpen, setIsWithdrawOpen] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
-  const { subscription, isLoading: isSubLoading } = useSubscription();
+  const [isUpgradeOpen, setIsUpgradeOpen] = useState(false);
+  const { subscription, isLoading: isSubLoading, refetch: refetchSubscription } = useSubscription();
   const { user, signOut } = useAuth();
   const { wallet, transactions, isLoading: isWalletLoading, refetch: refetchWallet } = useWallet(user?.id);
   const { referralCode, totalReferrals, getReferralLink, refetch: refetchReferral } = useReferral(user?.id);
@@ -220,9 +222,19 @@ const Dashboard = () => {
                         <span className="font-bold text-amber-400">{membershipPlan} Member</span>
                       </div>
                     </div>
-                    <span className="text-xs text-muted-foreground">
-                      Expires: {membershipExpiry}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">
+                        Expires: {membershipExpiry}
+                      </span>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-6 text-xs text-primary hover:text-primary"
+                        onClick={() => setIsUpgradeOpen(true)}
+                      >
+                        Upgrade
+                      </Button>
+                    </div>
                   </div>
                 ) : (
                   <Link to="/membership">
@@ -816,6 +828,24 @@ const Dashboard = () => {
           userId={user?.id || ''}
           balance={wallet.balance}
           onSuccess={refetchWallet}
+        />
+      )}
+
+      {/* Upgrade Membership Dialog */}
+      {subscription && user && (
+        <UpgradeMembershipDialog
+          open={isUpgradeOpen}
+          onOpenChange={setIsUpgradeOpen}
+          currentSubscription={{
+            id: subscription.id,
+            plan_name: subscription.plan_name,
+            plan_price: subscription.plan_price,
+            billing_cycle: subscription.billing_cycle,
+            end_date: subscription.end_date,
+            discount_percentage: subscription.discount_percentage || 0,
+          }}
+          userId={user.id}
+          onUpgradeComplete={refetchSubscription}
         />
       )}
     </div>
