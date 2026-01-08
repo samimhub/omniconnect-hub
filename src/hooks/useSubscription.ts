@@ -12,6 +12,7 @@ export interface Subscription {
   status: string;
   start_date: string;
   end_date: string;
+  discount_percentage: number | null;
   created_at: string;
   updated_at: string;
 }
@@ -21,39 +22,39 @@ export const useSubscription = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchSubscription = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        
-        if (!user) {
-          setIsLoading(false);
-          return;
-        }
-
-        const { data, error } = await supabase
-          .from('subscriptions')
-          .select('*')
-          .eq('user_id', user.id)
-          .eq('status', 'active')
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        if (error) {
-          console.error('Error fetching subscription:', error);
-          setError(error.message);
-        } else {
-          setSubscription(data);
-        }
-      } catch (err) {
-        console.error('Error:', err);
-        setError('Failed to fetch subscription');
-      } finally {
+  const fetchSubscription = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
         setIsLoading(false);
+        return;
       }
-    };
 
+      const { data, error } = await supabase
+        .from('subscriptions')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error fetching subscription:', error);
+        setError(error.message);
+      } else {
+        setSubscription(data);
+      }
+    } catch (err) {
+      console.error('Error:', err);
+      setError('Failed to fetch subscription');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchSubscription();
 
     // Listen for auth changes
@@ -66,5 +67,5 @@ export const useSubscription = () => {
     };
   }, []);
 
-  return { subscription, isLoading, error };
+  return { subscription, isLoading, error, refetch: fetchSubscription };
 };
