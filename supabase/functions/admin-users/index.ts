@@ -94,7 +94,7 @@ serve(async (req) => {
           return {
             id: authUser.id,
             email: authUser.email,
-            phone: authUser.phone,
+            phone: profile?.phone || authUser.phone,
             created_at: authUser.created_at,
             last_sign_in_at: authUser.last_sign_in_at,
             email_confirmed_at: authUser.email_confirmed_at,
