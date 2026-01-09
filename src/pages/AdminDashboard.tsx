@@ -44,6 +44,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAdminSubscriptions } from "@/hooks/useAdminSubscriptions";
 import { useAuth } from "@/hooks/useAuth";
 import { AdminMembershipPlans } from "@/components/admin/AdminMembershipPlans";
+import { AdminUserManagement } from "@/components/admin/AdminUserManagement";
 import { toast } from "sonner";
 
 // Mock Data
@@ -2203,7 +2204,7 @@ const AdminDashboard = () => {
   const renderContent = () => {
     switch (activeSection) {
       case "overview": return renderOverview();
-      case "users": return renderUserManagement();
+      case "users": return <AdminUserManagement />;
       case "agents": return renderAgentManagement();
       case "hospitals": return renderHospitalManagement();
       case "hotels": return renderHotelManagement();
