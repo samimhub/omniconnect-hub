@@ -45,6 +45,7 @@ import { useAdminSubscriptions } from "@/hooks/useAdminSubscriptions";
 import { useAuth } from "@/hooks/useAuth";
 import { AdminMembershipPlans } from "@/components/admin/AdminMembershipPlans";
 import { AdminUserManagement } from "@/components/admin/AdminUserManagement";
+import { AdminHospitalManagement } from "@/components/admin/AdminHospitalManagement";
 import { toast } from "sonner";
 
 // Mock Data
@@ -777,97 +778,7 @@ const AdminDashboard = () => {
   );
 
   const renderHospitalManagement = () => (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row gap-4 justify-between">
-        <div className="flex gap-3">
-          <div className="relative flex-1 sm:w-80">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input placeholder="Search hospitals..." className="pl-10 bg-muted/30" />
-          </div>
-          <Select defaultValue="all">
-            <SelectTrigger className="w-40 bg-muted/30">
-              <SelectValue placeholder="Location" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Locations</SelectItem>
-              <SelectItem value="mumbai">Mumbai</SelectItem>
-              <SelectItem value="delhi">Delhi</SelectItem>
-              <SelectItem value="bangalore">Bangalore</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" className="gap-2">
-            <Stethoscope className="w-4 h-4" /> Add Doctor
-          </Button>
-          <Button className="gap-2 bg-hospital hover:bg-hospital/90">
-            <Plus className="w-4 h-4" /> Add Hospital
-          </Button>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <StatCard title="Total Hospitals" value={dashboardStats.activeHospitals} icon={Building2} color="bg-hospital/20 text-hospital" />
-        <StatCard title="Total Doctors" value="892" icon={Stethoscope} color="bg-teal-500/20 text-teal-400" />
-        <StatCard title="Today's Appointments" value="67" icon={Calendar} color="bg-sky-500/20 text-sky-400" />
-        <StatCard title="Revenue Generated" value="₹8.9L" icon={DollarSign} color="bg-emerald-500/20 text-emerald-400" />
-      </div>
-
-      <Card className="bg-card/50 backdrop-blur-sm border-border/50">
-        <Table>
-          <TableHeader>
-            <TableRow className="border-border/50">
-              <TableHead>Hospital</TableHead>
-              <TableHead>Location</TableHead>
-              <TableHead>Doctors</TableHead>
-              <TableHead>Appointments</TableHead>
-              <TableHead>Commission %</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {hospitals.map((hospital) => (
-              <TableRow key={hospital.id} className="border-border/30">
-                <TableCell>
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-hospital/20 flex items-center justify-center">
-                      <Building2 className="w-5 h-5 text-hospital" />
-                    </div>
-                    <span className="font-medium">{hospital.name}</span>
-                  </div>
-                </TableCell>
-                <TableCell className="text-muted-foreground">
-                  <div className="flex items-center gap-1">
-                    <MapPin className="w-4 h-4" />
-                    {hospital.location}
-                  </div>
-                </TableCell>
-                <TableCell className="font-medium">{hospital.doctors}</TableCell>
-                <TableCell className="font-medium">{hospital.appointments.toLocaleString()}</TableCell>
-                <TableCell className="font-medium text-emerald-400">{hospital.commission}%</TableCell>
-                <TableCell>
-                  <Badge className={getStatusBadge(hospital.status)}>{hospital.status}</Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-1">
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                      <Eye className="w-4 h-4" />
-                    </Button>
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-red-400">
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </Card>
-    </div>
+    <AdminHospitalManagement />
   );
 
   const renderHotelManagement = () => (
