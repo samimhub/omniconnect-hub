@@ -74,6 +74,235 @@ export type Database = {
         }
         Relationships: []
       }
+      departments: {
+        Row: {
+          created_at: string
+          description: string | null
+          hospital_id: string
+          icon: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          hospital_id: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          hospital_id?: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "departments_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      doctors: {
+        Row: {
+          available_days: string[] | null
+          available_slots: string[] | null
+          consultation_fee: number
+          created_at: string
+          department_id: string | null
+          experience_years: number | null
+          hospital_id: string
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          name: string
+          qualification: string | null
+          rating: number | null
+          reviews_count: number | null
+          specialty: string
+          updated_at: string
+        }
+        Insert: {
+          available_days?: string[] | null
+          available_slots?: string[] | null
+          consultation_fee?: number
+          created_at?: string
+          department_id?: string | null
+          experience_years?: number | null
+          hospital_id: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          name: string
+          qualification?: string | null
+          rating?: number | null
+          reviews_count?: number | null
+          specialty: string
+          updated_at?: string
+        }
+        Update: {
+          available_days?: string[] | null
+          available_slots?: string[] | null
+          consultation_fee?: number
+          created_at?: string
+          department_id?: string | null
+          experience_years?: number | null
+          hospital_id?: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          name?: string
+          qualification?: string | null
+          rating?: number | null
+          reviews_count?: number | null
+          specialty?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "doctors_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "doctors_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hospital_services: {
+        Row: {
+          created_at: string
+          description: string | null
+          hospital_id: string
+          id: string
+          is_active: boolean | null
+          name: string
+          price: number | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          hospital_id: string
+          id?: string
+          is_active?: boolean | null
+          name: string
+          price?: number | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          hospital_id?: string
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          price?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hospital_services_hospital_id_fkey"
+            columns: ["hospital_id"]
+            isOneToOne: false
+            referencedRelation: "hospitals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hospitals: {
+        Row: {
+          accreditations: string[] | null
+          address: string
+          beds_count: number | null
+          city: string
+          commission_percentage: number | null
+          country: string
+          created_at: string
+          description: string | null
+          email: string | null
+          established_year: number | null
+          facilities: string[] | null
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          name: string
+          opening_hours: string | null
+          phone: string | null
+          pincode: string | null
+          rating: number | null
+          reviews_count: number | null
+          state: string
+          updated_at: string
+          website: string | null
+        }
+        Insert: {
+          accreditations?: string[] | null
+          address: string
+          beds_count?: number | null
+          city: string
+          commission_percentage?: number | null
+          country?: string
+          created_at?: string
+          description?: string | null
+          email?: string | null
+          established_year?: number | null
+          facilities?: string[] | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          name: string
+          opening_hours?: string | null
+          phone?: string | null
+          pincode?: string | null
+          rating?: number | null
+          reviews_count?: number | null
+          state: string
+          updated_at?: string
+          website?: string | null
+        }
+        Update: {
+          accreditations?: string[] | null
+          address?: string
+          beds_count?: number | null
+          city?: string
+          commission_percentage?: number | null
+          country?: string
+          created_at?: string
+          description?: string | null
+          email?: string | null
+          established_year?: number | null
+          facilities?: string[] | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          name?: string
+          opening_hours?: string | null
+          phone?: string | null
+          pincode?: string | null
+          rating?: number | null
+          reviews_count?: number | null
+          state?: string
+          updated_at?: string
+          website?: string | null
+        }
+        Relationships: []
+      }
       membership_plans: {
         Row: {
           created_at: string
