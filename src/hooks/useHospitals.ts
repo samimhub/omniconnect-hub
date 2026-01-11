@@ -54,11 +54,12 @@ export interface Department {
 export function useHospitals() {
   const [hospitals, setHospitals] = useState<Hospital[]>([]);
   const [doctors, setDoctors] = useState<Doctor[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [initialLoadDone, setInitialLoadDone] = useState(false);
 
   const fetchHospitals = useCallback(async (filters?: { city?: string; state?: string; search?: string; specialty?: string }) => {
     try {
-      setIsLoading(true);
+      if (!initialLoadDone) setIsLoading(true);
       let query = supabase
         .from('hospitals')
         .select('*')
@@ -79,12 +80,13 @@ export function useHospitals() {
 
       if (error) throw error;
       setHospitals(data || []);
+      setInitialLoadDone(true);
     } catch (error) {
       console.error('Error fetching hospitals:', error);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [initialLoadDone]);
 
   const fetchDoctors = useCallback(async (filters?: { hospital_id?: string; specialty?: string; search?: string }) => {
     try {

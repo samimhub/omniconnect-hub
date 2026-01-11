@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
 import { BookingDialog } from "@/components/hospital/BookingDialog";
@@ -185,8 +185,15 @@ export default function Hospital() {
   const availableStates = selectedCountry ? statesByCountry[selectedCountry] || [] : [];
   const availableAreas = selectedState ? areasByState[selectedState] || [] : [];
 
-  // Search and filter
+  // Initial load only
   useEffect(() => {
+    fetchHospitals();
+    fetchDoctors();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Search and filter handler
+  const applyFilters = useCallback(() => {
     const filters: { city?: string; search?: string; specialty?: string } = {};
     
     if (selectedArea) {
@@ -210,6 +217,13 @@ export default function Hospital() {
     fetchDoctors(doctorFilters);
   }, [selectedArea, searchQuery, selectedCategory, fetchHospitals, fetchDoctors, availableAreas]);
 
+  // Apply filters when category changes
+  useEffect(() => {
+    if (selectedCategory) {
+      applyFilters();
+    }
+  }, [selectedCategory, applyFilters]);
+
   const handleCountryChange = (value: string) => {
     setSelectedCountry(value);
     setSelectedState("");
@@ -232,15 +246,7 @@ export default function Hospital() {
   };
 
   const handleSearch = () => {
-    const filters: { city?: string; search?: string } = {};
-    if (selectedArea) {
-      const area = availableAreas.find(a => a.id === selectedArea);
-      if (area) filters.city = area.name;
-    }
-    if (searchQuery) {
-      filters.search = searchQuery;
-    }
-    fetchHospitals(filters);
+    applyFilters();
   };
 
   return (
