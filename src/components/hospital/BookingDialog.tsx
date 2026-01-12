@@ -123,6 +123,39 @@ export function BookingDialog({
     setStep("confirm");
   };
 
+  const sendAdminNotification = async () => {
+    try {
+      const adminEmail = "admin@example.com"; // TODO: Replace with actual admin email or fetch from settings
+      
+      const response = await supabase.functions.invoke("send-booking-notification", {
+        body: {
+          adminEmail,
+          patientName: user?.email?.split("@")[0] || "Patient",
+          patientEmail: user?.email || "",
+          doctorName: doctor.name,
+          doctorSpecialty: doctor.specialty,
+          hospitalName: hospital.name,
+          hospitalLocation: hospital.location || hospital.address,
+          appointmentDate: selectedDate ? format(selectedDate, "EEEE, MMMM d, yyyy") : "",
+          appointmentTime: selectedTime,
+          consultationFee: originalFee,
+          paymentMethod,
+          paymentStatus: paymentMethod === "online" ? "paid" : "pending",
+          membershipPlan: membershipPlan || undefined,
+          discountApplied: appliedDiscount || undefined,
+        },
+      });
+
+      if (response.error) {
+        console.error("Failed to send admin notification:", response.error);
+      } else {
+        console.log("Admin notification sent successfully");
+      }
+    } catch (error) {
+      console.error("Error sending admin notification:", error);
+    }
+  };
+
   const saveAppointment = async (paymentId?: string, orderId?: string) => {
     if (!user || !selectedDate) return;
 
@@ -147,6 +180,9 @@ export function BookingDialog({
       console.error("Failed to save appointment:", error);
       throw error;
     }
+
+    // Send admin notification after successful booking
+    await sendAdminNotification();
   };
 
   const handlePayOnline = async () => {
