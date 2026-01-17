@@ -46,6 +46,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { AdminMembershipPlans } from "@/components/admin/AdminMembershipPlans";
 import { AdminUserManagement } from "@/components/admin/AdminUserManagement";
 import { AdminHospitalManagement } from "@/components/admin/AdminHospitalManagement";
+import { SuperAdminRoleManagement } from "@/components/admin/SuperAdminRoleManagement";
 import { toast } from "sonner";
 
 // Mock Data
@@ -257,6 +258,7 @@ const drivers = [
 
 const sidebarItems = [
   { id: "overview", label: "Overview", icon: Home },
+  { id: "roles", label: "Role Management", icon: Crown, superAdminOnly: true },
   { id: "users", label: "User Management", icon: Users },
   { id: "agents", label: "Agent Management", icon: UserCheck },
   { id: "hospitals", label: "Hospital Management", icon: Building2 },
@@ -275,7 +277,7 @@ const AdminDashboard = () => {
   const [activeSection, setActiveSection] = useState("overview");
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const { user, signOut } = useAuth();
+  const { user, signOut, isSuperAdmin, role } = useAuth();
   const navigate = useNavigate();
   
   // Fetch real subscription data
@@ -2115,6 +2117,7 @@ const AdminDashboard = () => {
   const renderContent = () => {
     switch (activeSection) {
       case "overview": return renderOverview();
+      case "roles": return <SuperAdminRoleManagement />;
       case "users": return <AdminUserManagement />;
       case "agents": return renderAgentManagement();
       case "hospitals": return renderHospitalManagement();

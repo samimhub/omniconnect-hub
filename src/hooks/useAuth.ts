@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from "@supabase/supabase-js";
 
-export type AppRole = "admin" | "agent" | "user";
+export type AppRole = "super_admin" | "admin" | "supervisor" | "agent" | "user";
 
 interface AuthState {
   user: User | null;
@@ -153,7 +153,11 @@ export function useAuth() {
 
   const getDashboardPath = (): string => {
     switch (authState.role) {
+      case "super_admin":
+        return "/admin";
       case "admin":
+        return "/admin";
+      case "supervisor":
         return "/admin";
       case "agent":
         return "/agent-dashboard";
@@ -163,12 +167,19 @@ export function useAuth() {
     }
   };
 
+  const isSuperAdmin = authState.role === "super_admin";
+  const isAdmin = authState.role === "admin" || authState.role === "super_admin";
+  const isSupervisor = authState.role === "supervisor" || isAdmin;
+
   return {
     user: authState.user,
     session: authState.session,
     role: authState.role,
     isLoading: authState.isLoading,
     isAuthenticated: !!authState.session,
+    isSuperAdmin,
+    isAdmin,
+    isSupervisor,
     signUp,
     signIn,
     signOut,
