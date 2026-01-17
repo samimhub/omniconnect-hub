@@ -28,8 +28,8 @@ serve(async (req) => {
       );
     }
 
-    // Validate role
-    const validRoles = ["admin", "agent", "user"];
+    // Validate role - now including super_admin and supervisor
+    const validRoles = ["super_admin", "admin", "supervisor", "agent", "user"];
     if (!validRoles.includes(role)) {
       return new Response(
         JSON.stringify({ error: "Invalid role" }),
@@ -37,12 +37,17 @@ serve(async (req) => {
       );
     }
 
+    // For public signup, only allow user and agent roles
+    // super_admin, admin, supervisor can only be assigned by super_admin via admin-users function
+    const publicRoles = ["user", "agent"];
+    const roleToAssign = publicRoles.includes(role) ? role : "user";
+
     // Insert user role using service role (bypasses RLS)
     const { error: roleError } = await supabaseAdmin
       .from("user_roles")
       .insert({
         user_id: userId,
-        role: role,
+        role: roleToAssign,
       });
 
     if (roleError) {
@@ -68,7 +73,7 @@ serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ success: true, message: "Role and profile assigned successfully" }),
+      JSON.stringify({ success: true, message: "Role and profile assigned successfully", assignedRole: roleToAssign }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error: unknown) {
