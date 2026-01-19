@@ -14,6 +14,7 @@ import Membership from "./pages/Membership";
 import Dashboard from "./pages/Dashboard";
 import AgentDashboard from "./pages/AgentDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
+import SupervisorDashboard from "./pages/SupervisorDashboard";
 import NotFound from "./pages/NotFound";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 
@@ -53,9 +54,17 @@ const App = () => (
             } 
           />
           <Route 
+            path="/supervisor" 
+            element={
+              <ProtectedRoute allowedRoles={["supervisor"]}>
+                <SupervisorDashboard />
+              </ProtectedRoute>
+            } 
+          />
+          <Route 
             path="/admin" 
             element={
-              <ProtectedRoute allowedRoles={["admin"]}>
+              <ProtectedRoute allowedRoles={["admin", "super_admin"]}>
                 <AdminDashboard />
               </ProtectedRoute>
             } 
