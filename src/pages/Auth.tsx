@@ -22,7 +22,7 @@ import { useAuth, AppRole } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
-type AuthMode = "login" | "signup";
+type AuthMode = "login" | "signup" | "forgot";
 
 const roleOptions: { value: AppRole; label: string; description: string; icon: React.ReactNode }[] = [
   { 
@@ -81,8 +81,39 @@ export default function Auth() {
     }
   }, [isAuthenticated, isLoading, navigate, location.state, getDashboardPath]);
 
+  const handleForgotPassword = async () => {
+    if (!formData.email.trim()) {
+      toast.error("Please enter your email address");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(formData.email, {
+        redirectTo: `${window.location.origin}/auth?mode=reset`,
+      });
+
+      if (error) {
+        toast.error(error.message);
+      } else {
+        toast.success("Password reset link sent to your email!");
+        setMode("login");
+      }
+    } catch (err) {
+      toast.error("Failed to send reset email");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (mode === "forgot") {
+      await handleForgotPassword();
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -188,11 +219,13 @@ export default function Auth() {
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
-              {mode === "login" ? "Welcome back" : "Create your account"}
+              {mode === "login" ? "Welcome back" : mode === "forgot" ? "Reset Password" : "Create your account"}
             </h1>
             <p className="text-muted-foreground">
               {mode === "login" 
                 ? "Sign in to access your account and services" 
+                : mode === "forgot"
+                ? "Enter your email to receive a password reset link"
                 : "Join 50,000+ users enjoying our services"}
             </p>
           </div>
@@ -316,35 +349,51 @@ export default function Auth() {
               </div>
             )}
 
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Enter your password"
-                  value={formData.password}
-                  onChange={(e) =>
-                    setFormData({ ...formData, password: e.target.value })
-                  }
-                  className="pl-10 pr-10"
-                  required
-                  minLength={6}
-                />
+            {/* Password field - not shown for forgot mode */}
+            {mode !== "forgot" && (
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Enter your password"
+                    value={formData.password}
+                    onChange={(e) =>
+                      setFormData({ ...formData, password: e.target.value })
+                    }
+                    className="pl-10 pr-10"
+                    required
+                    minLength={6}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-5 w-5" />
+                    ) : (
+                      <Eye className="h-5 w-5" />
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Forgot Password Link - Login mode only */}
+            {mode === "login" && (
+              <div className="text-right">
                 <button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  onClick={() => setMode("forgot")}
+                  className="text-sm text-primary hover:underline"
                 >
-                  {showPassword ? (
-                    <EyeOff className="h-5 w-5" />
-                  ) : (
-                    <Eye className="h-5 w-5" />
-                  )}
+                  Forgot password?
                 </button>
               </div>
-            </div>
+            )}
 
             {/* Submit Button */}
             <Button 
@@ -357,10 +406,10 @@ export default function Auth() {
               {isSubmitting ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  {mode === "login" ? "Signing In..." : "Creating Account..."}
+                  {mode === "login" ? "Signing In..." : mode === "forgot" ? "Sending..." : "Creating Account..."}
                 </>
               ) : (
-                mode === "login" ? "Sign In" : "Create Account"
+                mode === "login" ? "Sign In" : mode === "forgot" ? "Send Reset Link" : "Create Account"
               )}
             </Button>
           </form>
@@ -375,6 +424,16 @@ export default function Auth() {
                   className="text-primary font-medium hover:underline"
                 >
                   Sign up
+                </button>
+              </>
+            ) : mode === "forgot" ? (
+              <>
+                Remember your password?{" "}
+                <button
+                  onClick={() => setMode("login")}
+                  className="text-primary font-medium hover:underline"
+                >
+                  Sign in
                 </button>
               </>
             ) : (
