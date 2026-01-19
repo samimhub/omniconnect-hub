@@ -158,7 +158,7 @@ export function useAuth() {
       case "admin":
         return "/admin";
       case "supervisor":
-        return "/admin";
+        return "/supervisor";
       case "agent":
         return "/agent-dashboard";
       case "user":
