@@ -22,7 +22,7 @@ import { useAuth, AppRole } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
-type AuthMode = "login" | "signup" | "forgot" | "reset";
+type AuthMode = "login" | "signup" | "forgot" | "reset" | "admin-setup";
 
 const roleOptions: { value: AppRole; label: string; description: string; icon: React.ReactNode }[] = [
   { 
@@ -55,6 +55,7 @@ export default function Auth() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [setupKey, setSetupKey] = useState("");
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -147,6 +148,54 @@ export default function Auth() {
     }
   };
 
+  const handleAdminSetup = async () => {
+    if (!formData.email.trim()) {
+      toast.error("Please enter Super Admin email");
+      return;
+    }
+    if (!setupKey.trim()) {
+      toast.error("Please enter the setup key");
+      return;
+    }
+    if (newPassword.length < 8) {
+      toast.error("Password must be at least 8 characters");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("reset-super-admin-password", {
+        body: { 
+          email: formData.email, 
+          action: "direct_password_set",
+          newPassword: newPassword,
+          setupKey: setupKey
+        },
+      });
+
+      if (error) {
+        toast.error(error.message || "Failed to setup Super Admin");
+      } else if (data?.success) {
+        toast.success(data.message || "Super Admin configured successfully!");
+        setNewPassword("");
+        setConfirmPassword("");
+        setSetupKey("");
+        setMode("login");
+      } else {
+        toast.error(data?.error || "Failed to setup Super Admin");
+      }
+    } catch (err) {
+      console.error("Admin setup error:", err);
+      toast.error("Failed to setup Super Admin");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -157,6 +206,11 @@ export default function Auth() {
 
     if (mode === "reset") {
       await handleResetPassword();
+      return;
+    }
+
+    if (mode === "admin-setup") {
+      await handleAdminSetup();
       return;
     }
 
@@ -265,7 +319,7 @@ export default function Auth() {
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
-              {mode === "login" ? "Welcome back" : mode === "forgot" ? "Reset Password" : mode === "reset" ? "Set New Password" : "Create your account"}
+              {mode === "login" ? "Welcome back" : mode === "forgot" ? "Reset Password" : mode === "reset" ? "Set New Password" : mode === "admin-setup" ? "Super Admin Setup" : "Create your account"}
             </h1>
             <p className="text-muted-foreground">
               {mode === "login" 
@@ -274,6 +328,8 @@ export default function Auth() {
                 ? "Enter your email to receive a password reset link"
                 : mode === "reset"
                 ? "Enter your new password below"
+                : mode === "admin-setup"
+                ? "Configure Super Admin credentials securely"
                 : "Join 50,000+ users enjoying our services"}
             </p>
           </div>
@@ -335,15 +391,15 @@ export default function Auth() {
             )}
 
             {/* Email - not shown for reset mode */}
-            {mode !== "reset" && (
+            {(mode !== "reset") && (
               <div className="space-y-2">
-                <Label htmlFor="email">Email Address</Label>
+                <Label htmlFor="email">{mode === "admin-setup" ? "Super Admin Email" : "Email Address"}</Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                   <Input
                     id="email"
                     type="email"
-                    placeholder="Enter your email"
+                    placeholder={mode === "admin-setup" ? "super.admin@example.com" : "Enter your email"}
                     value={formData.email}
                     onChange={(e) =>
                       setFormData({ ...formData, email: e.target.value })
@@ -352,6 +408,26 @@ export default function Auth() {
                     required
                   />
                 </div>
+              </div>
+            )}
+
+            {/* Setup Key - Admin setup only */}
+            {mode === "admin-setup" && (
+              <div className="space-y-2">
+                <Label htmlFor="setupKey">Setup Key</Label>
+                <div className="relative">
+                  <Shield className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <Input
+                    id="setupKey"
+                    type="password"
+                    placeholder="Enter setup key"
+                    value={setupKey}
+                    onChange={(e) => setSetupKey(e.target.value)}
+                    className="pl-10"
+                    required
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground">Contact your system administrator for the setup key</p>
               </div>
             )}
 
@@ -399,17 +475,17 @@ export default function Auth() {
               </div>
             )}
 
-            {/* Password fields for reset mode */}
-            {mode === "reset" && (
+            {/* Password fields for reset and admin-setup mode */}
+            {(mode === "reset" || mode === "admin-setup") && (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="newPassword">New Password</Label>
+                  <Label htmlFor="newPassword">{mode === "admin-setup" ? "Password" : "New Password"}</Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                     <Input
                       id="newPassword"
                       type={showPassword ? "text" : "password"}
-                      placeholder="Enter new password (min 8 characters)"
+                      placeholder="Enter password (min 8 characters)"
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       className="pl-10 pr-10"
@@ -432,7 +508,7 @@ export default function Auth() {
                     <Input
                       id="confirmPassword"
                       type={showPassword ? "text" : "password"}
-                      placeholder="Confirm your new password"
+                      placeholder="Confirm your password"
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       className="pl-10"
@@ -482,7 +558,14 @@ export default function Auth() {
 
             {/* Forgot Password Link - Login mode only */}
             {mode === "login" && (
-              <div className="text-right">
+              <div className="flex justify-between">
+                <button
+                  type="button"
+                  onClick={() => setMode("admin-setup")}
+                  className="text-sm text-muted-foreground hover:text-primary hover:underline"
+                >
+                  Super Admin Setup
+                </button>
                 <button
                   type="button"
                   onClick={() => setMode("forgot")}
@@ -504,10 +587,10 @@ export default function Auth() {
               {isSubmitting ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  {mode === "login" ? "Signing In..." : mode === "forgot" ? "Sending..." : mode === "reset" ? "Updating Password..." : "Creating Account..."}
+                  {mode === "login" ? "Signing In..." : mode === "forgot" ? "Sending..." : mode === "reset" ? "Updating Password..." : mode === "admin-setup" ? "Setting Up..." : "Creating Account..."}
                 </>
               ) : (
-                mode === "login" ? "Sign In" : mode === "forgot" ? "Send Reset Link" : mode === "reset" ? "Update Password" : "Create Account"
+                mode === "login" ? "Sign In" : mode === "forgot" ? "Send Reset Link" : mode === "reset" ? "Update Password" : mode === "admin-setup" ? "Setup Super Admin" : "Create Account"
               )}
             </Button>
           </form>
@@ -524,9 +607,9 @@ export default function Auth() {
                   Sign up
                 </button>
               </>
-            ) : mode === "forgot" || mode === "reset" ? (
+            ) : mode === "forgot" || mode === "reset" || mode === "admin-setup" ? (
               <>
-                Remember your password?{" "}
+                {mode === "admin-setup" ? "Already have credentials?" : "Remember your password?"}{" "}
                 <button
                   onClick={() => setMode("login")}
                   className="text-primary font-medium hover:underline"
