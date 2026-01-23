@@ -13,7 +13,7 @@ serve(async (req) => {
   }
 
   try {
-    const { email, action } = await req.json();
+    const { email, action, newPassword, setupKey } = await req.json();
     console.log('Password reset request for:', email, 'action:', action);
 
     if (!email) {
@@ -25,6 +25,116 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
+
+    // Direct password set for super admin (secured with setup key)
+    if (action === 'direct_password_set') {
+      // Security: Require a setup key for direct password setting
+      const validSetupKey = 'PRIME_ADMIN_SETUP_2024';
+      
+      if (setupKey !== validSetupKey) {
+        console.error('Invalid setup key provided');
+        throw new Error('Invalid setup key');
+      }
+
+      if (!newPassword || newPassword.length < 8) {
+        throw new Error('Password must be at least 8 characters');
+      }
+
+      // Find the user by email
+      const { data: authUsers, error: listError } = await supabaseAdmin.auth.admin.listUsers();
+      
+      if (listError) {
+        console.error('Error listing users:', listError);
+        throw new Error('Failed to find user');
+      }
+
+      const user = authUsers.users.find(u => u.email?.toLowerCase() === email.toLowerCase());
+      
+      if (!user) {
+        console.log('User not found, creating new super admin:', email);
+        
+        // Create new super admin user
+        const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+          email: email,
+          password: newPassword,
+          email_confirm: true,
+        });
+
+        if (createError) {
+          console.error('Error creating user:', createError);
+          throw new Error('Failed to create super admin user');
+        }
+
+        // Add super_admin role
+        const { error: roleError } = await supabaseAdmin
+          .from('user_roles')
+          .insert({ user_id: newUser.user.id, role: 'super_admin' });
+
+        if (roleError) {
+          console.error('Error adding role:', roleError);
+          // Continue anyway, user was created
+        }
+
+        // Create profile
+        const { error: profileError } = await supabaseAdmin
+          .from('profiles')
+          .insert({ 
+            user_id: newUser.user.id, 
+            full_name: 'Super Admin',
+          });
+
+        if (profileError) {
+          console.error('Error creating profile:', profileError);
+        }
+
+        console.log('New super admin created successfully:', newUser.user.id);
+
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            message: 'Super Admin account created successfully. You can now login.',
+            isNewUser: true
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+        );
+      }
+
+      // Update existing user's password
+      const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
+        user.id,
+        { password: newPassword }
+      );
+
+      if (updateError) {
+        console.error('Error updating password:', updateError);
+        throw new Error('Failed to update password');
+      }
+
+      // Ensure user has super_admin role
+      const { data: existingRole } = await supabaseAdmin
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .eq('role', 'super_admin')
+        .single();
+
+      if (!existingRole) {
+        await supabaseAdmin
+          .from('user_roles')
+          .insert({ user_id: user.id, role: 'super_admin' });
+      }
+
+      console.log('Password updated successfully for user:', user.id);
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: 'Password updated successfully. You can now login.',
+          isNewUser: false
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      );
+    }
 
     if (action === 'send_reset_link') {
       // Verify user exists and is a super_admin or admin
@@ -75,64 +185,11 @@ serve(async (req) => {
 
       console.log('Password reset link generated successfully for:', email);
       
-      // In production, you would send this via email
-      // For now, we log it and return success
       return new Response(
         JSON.stringify({ 
           success: true, 
           message: 'Password reset link sent to your email.',
           isAdmin: isAdminUser,
-          // Only include link in development/testing - remove in production
-          ...(Deno.env.get('ENVIRONMENT') === 'development' && { 
-            resetLink: resetData?.properties?.action_link 
-          })
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
-      );
-    }
-
-    if (action === 'update_password') {
-      const authHeader = req.headers.get('Authorization');
-      if (!authHeader) {
-        throw new Error('Authorization required to update password');
-      }
-
-      // Verify the user from the token
-      const supabaseUser = createClient(
-        Deno.env.get('SUPABASE_URL') ?? '',
-        Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-        { global: { headers: { Authorization: authHeader } } }
-      );
-
-      const { data: { user }, error: userError } = await supabaseUser.auth.getUser();
-      if (userError || !user) {
-        console.error('Auth error:', userError);
-        throw new Error('Invalid session');
-      }
-
-      const { newPassword } = await req.json();
-      
-      if (!newPassword || newPassword.length < 8) {
-        throw new Error('Password must be at least 8 characters');
-      }
-
-      // Update password using admin client
-      const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
-        user.id,
-        { password: newPassword }
-      );
-
-      if (updateError) {
-        console.error('Error updating password:', updateError);
-        throw new Error('Failed to update password');
-      }
-
-      console.log('Password updated successfully for user:', user.id);
-
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          message: 'Password updated successfully' 
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
       );
