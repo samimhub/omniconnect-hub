@@ -22,7 +22,7 @@ import { useAuth, AppRole } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
-type AuthMode = "login" | "signup" | "forgot";
+type AuthMode = "login" | "signup" | "forgot" | "reset";
 
 const roleOptions: { value: AppRole; label: string; description: string; icon: React.ReactNode }[] = [
   { 
@@ -48,10 +48,13 @@ const roleOptions: { value: AppRole; label: string; description: string; icon: R
 export default function Auth() {
   const [searchParams] = useSearchParams();
   const referralCodeFromUrl = searchParams.get("ref");
+  const modeFromUrl = searchParams.get("mode");
   
   const [mode, setMode] = useState<AuthMode>("login");
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -65,13 +68,15 @@ export default function Auth() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Set signup mode if referral code is present
+  // Set mode based on URL params
   useEffect(() => {
-    if (referralCodeFromUrl) {
+    if (modeFromUrl === "reset") {
+      setMode("reset");
+    } else if (referralCodeFromUrl) {
       setMode("signup");
       setFormData(prev => ({ ...prev, referralCode: referralCodeFromUrl }));
     }
-  }, [referralCodeFromUrl]);
+  }, [referralCodeFromUrl, modeFromUrl]);
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -89,18 +94,54 @@ export default function Auth() {
 
     setIsSubmitting(true);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(formData.email, {
-        redirectTo: `${window.location.origin}/auth?mode=reset`,
+      // Use secure edge function for password reset
+      const { data, error } = await supabase.functions.invoke("reset-super-admin-password", {
+        body: { email: formData.email, action: "send_reset_link" },
       });
 
       if (error) {
-        toast.error(error.message);
-      } else {
-        toast.success("Password reset link sent to your email!");
+        toast.error(error.message || "Failed to send reset email");
+      } else if (data?.success) {
+        toast.success(data.message || "Password reset link sent to your email!");
         setMode("login");
+      } else {
+        toast.error(data?.error || "Failed to send reset email");
       }
     } catch (err) {
+      console.error("Password reset error:", err);
       toast.error("Failed to send reset email");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    if (newPassword.length < 8) {
+      toast.error("Password must be at least 8 characters");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+
+      if (error) {
+        toast.error(error.message || "Failed to update password");
+      } else {
+        toast.success("Password updated successfully! Please sign in.");
+        setNewPassword("");
+        setConfirmPassword("");
+        setMode("login");
+        // Sign out to ensure clean state
+        await supabase.auth.signOut();
+      }
+    } catch (err) {
+      console.error("Password update error:", err);
+      toast.error("Failed to update password");
     } finally {
       setIsSubmitting(false);
     }
@@ -111,6 +152,11 @@ export default function Auth() {
     
     if (mode === "forgot") {
       await handleForgotPassword();
+      return;
+    }
+
+    if (mode === "reset") {
+      await handleResetPassword();
       return;
     }
 
@@ -219,13 +265,15 @@ export default function Auth() {
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
-              {mode === "login" ? "Welcome back" : mode === "forgot" ? "Reset Password" : "Create your account"}
+              {mode === "login" ? "Welcome back" : mode === "forgot" ? "Reset Password" : mode === "reset" ? "Set New Password" : "Create your account"}
             </h1>
             <p className="text-muted-foreground">
               {mode === "login" 
                 ? "Sign in to access your account and services" 
                 : mode === "forgot"
                 ? "Enter your email to receive a password reset link"
+                : mode === "reset"
+                ? "Enter your new password below"
                 : "Join 50,000+ users enjoying our services"}
             </p>
           </div>
@@ -286,24 +334,26 @@ export default function Auth() {
               </div>
             )}
 
-            {/* Email */}
-            <div className="space-y-2">
-              <Label htmlFor="email">Email Address</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="Enter your email"
-                  value={formData.email}
-                  onChange={(e) =>
-                    setFormData({ ...formData, email: e.target.value })
-                  }
-                  className="pl-10"
-                  required
-                />
+            {/* Email - not shown for reset mode */}
+            {mode !== "reset" && (
+              <div className="space-y-2">
+                <Label htmlFor="email">Email Address</Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="Enter your email"
+                    value={formData.email}
+                    onChange={(e) =>
+                      setFormData({ ...formData, email: e.target.value })
+                    }
+                    className="pl-10"
+                    required
+                  />
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Phone - Signup only */}
             {mode === "signup" && (
@@ -349,8 +399,56 @@ export default function Auth() {
               </div>
             )}
 
-            {/* Password field - not shown for forgot mode */}
-            {mode !== "forgot" && (
+            {/* Password fields for reset mode */}
+            {mode === "reset" && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="newPassword">New Password</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                    <Input
+                      id="newPassword"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Enter new password (min 8 characters)"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="pl-10 pr-10"
+                      required
+                      minLength={8}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    </button>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Confirm Password</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                    <Input
+                      id="confirmPassword"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Confirm your new password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="pl-10"
+                      required
+                      minLength={8}
+                    />
+                  </div>
+                  {newPassword && confirmPassword && newPassword !== confirmPassword && (
+                    <p className="text-xs text-destructive">Passwords do not match</p>
+                  )}
+                </div>
+              </>
+            )}
+
+            {/* Password field - for login and signup only */}
+            {(mode === "login" || mode === "signup") && (
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
                 <div className="relative">
@@ -406,10 +504,10 @@ export default function Auth() {
               {isSubmitting ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  {mode === "login" ? "Signing In..." : mode === "forgot" ? "Sending..." : "Creating Account..."}
+                  {mode === "login" ? "Signing In..." : mode === "forgot" ? "Sending..." : mode === "reset" ? "Updating Password..." : "Creating Account..."}
                 </>
               ) : (
-                mode === "login" ? "Sign In" : mode === "forgot" ? "Send Reset Link" : "Create Account"
+                mode === "login" ? "Sign In" : mode === "forgot" ? "Send Reset Link" : mode === "reset" ? "Update Password" : "Create Account"
               )}
             </Button>
           </form>
@@ -426,7 +524,7 @@ export default function Auth() {
                   Sign up
                 </button>
               </>
-            ) : mode === "forgot" ? (
+            ) : mode === "forgot" || mode === "reset" ? (
               <>
                 Remember your password?{" "}
                 <button
