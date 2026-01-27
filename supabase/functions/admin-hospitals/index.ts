@@ -5,6 +5,29 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Escape PostgreSQL LIKE special characters to prevent SQL injection
+function escapeLikePattern(input: string): string {
+  return input
+    .replace(/\\/g, '\\\\')  // Escape backslash first
+    .replace(/%/g, '\\%')    // Escape %
+    .replace(/_/g, '\\_');   // Escape _
+}
+
+// Validate and sanitize search input
+function sanitizeSearchInput(search: string | undefined | null): string | null {
+  if (!search || typeof search !== 'string') return null;
+  
+  // Trim and limit length
+  const trimmed = search.trim();
+  if (trimmed.length === 0) return null;
+  if (trimmed.length > 100) {
+    throw new Error('Search query too long (max 100 characters)');
+  }
+  
+  // Escape LIKE special characters
+  return escapeLikePattern(trimmed);
+}
+
 // Helper function to verify admin role
 // deno-lint-ignore no-explicit-any
 async function verifyAdminRole(req: Request, supabaseAdmin: any) {
@@ -78,6 +101,9 @@ Deno.serve(async (req) => {
       case 'list-hospitals': {
         const { search, status } = data || {};
         
+        // Sanitize search input to prevent SQL injection
+        const sanitizedSearch = sanitizeSearchInput(search);
+        
         let query = supabase
           .from('hospitals')
           .select(`
@@ -87,8 +113,8 @@ Deno.serve(async (req) => {
           `)
           .order('created_at', { ascending: false });
 
-        if (search) {
-          query = query.or(`name.ilike.%${search}%,city.ilike.%${search}%,state.ilike.%${search}%`);
+        if (sanitizedSearch) {
+          query = query.or(`name.ilike.%${sanitizedSearch}%,city.ilike.%${sanitizedSearch}%,state.ilike.%${sanitizedSearch}%`);
         }
 
         if (status === 'active') {
