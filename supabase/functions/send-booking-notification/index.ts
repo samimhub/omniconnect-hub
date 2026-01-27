@@ -9,6 +9,17 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+// HTML sanitization function to prevent XSS attacks in email templates
+function sanitizeHtml(str: string | undefined | null): string {
+  if (!str) return '';
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 interface BookingNotificationRequest {
   adminEmail: string;
   patientName: string;
@@ -34,22 +45,21 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const data: BookingNotificationRequest = await req.json();
     
-    const {
-      adminEmail,
-      patientName,
-      patientEmail,
-      doctorName,
-      doctorSpecialty,
-      hospitalName,
-      hospitalLocation,
-      appointmentDate,
-      appointmentTime,
-      consultationFee,
-      paymentMethod,
-      paymentStatus,
-      membershipPlan,
-      discountApplied,
-    } = data;
+    // Sanitize all user-provided string inputs to prevent XSS
+    const adminEmail = sanitizeHtml(data.adminEmail);
+    const patientName = sanitizeHtml(data.patientName);
+    const patientEmail = sanitizeHtml(data.patientEmail);
+    const doctorName = sanitizeHtml(data.doctorName);
+    const doctorSpecialty = sanitizeHtml(data.doctorSpecialty);
+    const hospitalName = sanitizeHtml(data.hospitalName);
+    const hospitalLocation = sanitizeHtml(data.hospitalLocation);
+    const appointmentDate = sanitizeHtml(data.appointmentDate);
+    const appointmentTime = sanitizeHtml(data.appointmentTime);
+    const membershipPlan = sanitizeHtml(data.membershipPlan);
+    const paymentMethod = data.paymentMethod; // Only used for comparison
+    const paymentStatus = data.paymentStatus; // Only used for comparison
+    const consultationFee = typeof data.consultationFee === 'number' ? data.consultationFee : 0;
+    const discountApplied = typeof data.discountApplied === 'number' ? data.discountApplied : 0;
 
     const paymentBadgeColor = paymentStatus === 'paid' ? '#10b981' : '#f59e0b';
     const paymentBadgeText = paymentStatus === 'paid' ? 'PAID' : 'PENDING';
