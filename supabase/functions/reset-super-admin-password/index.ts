@@ -26,10 +26,15 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Direct password set for super admin (secured with setup key)
+    // Direct password set for super admin (secured with environment variable setup key)
     if (action === 'direct_password_set') {
-      // Security: Require a setup key for direct password setting
-      const validSetupKey = 'PRIME_ADMIN_SETUP_2024';
+      // Security: Require a setup key from environment variable
+      const validSetupKey = Deno.env.get('SUPER_ADMIN_SETUP_KEY');
+      
+      if (!validSetupKey) {
+        console.error('SUPER_ADMIN_SETUP_KEY not configured in environment');
+        throw new Error('Setup key not configured on server');
+      }
       
       if (setupKey !== validSetupKey) {
         console.error('Invalid setup key provided');
