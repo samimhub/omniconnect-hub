@@ -15,14 +15,16 @@ import {
   UserCheck,
   Shield,
   Users,
-  Gift
+  Gift,
+  KeyRound
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth, AppRole } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 
-type AuthMode = "login" | "signup" | "forgot" | "reset" | "admin-setup";
+type AuthMode = "login" | "signup" | "forgot" | "reset" | "admin-setup" | "2fa";
 
 const roleOptions: { value: AppRole; label: string; description: string; icon: React.ReactNode }[] = [
   { 
@@ -56,6 +58,8 @@ export default function Auth() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [setupKey, setSetupKey] = useState("");
+  const [otpCode, setOtpCode] = useState("");
+  const [pendingUser, setPendingUser] = useState<{ id: string; email: string } | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -196,6 +200,66 @@ export default function Auth() {
     }
   };
 
+  const handle2FAVerification = async () => {
+    if (!pendingUser || otpCode.length !== 6) {
+      toast.error("Please enter the 6-digit verification code");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("two-factor-auth", {
+        body: { 
+          action: "verify_otp",
+          userId: pendingUser.id,
+          otp: otpCode
+        },
+      });
+
+      if (error || !data?.success) {
+        toast.error(data?.error || error?.message || "Invalid verification code");
+        return;
+      }
+
+      toast.success("Verification successful!");
+      setPendingUser(null);
+      setOtpCode("");
+      // Navigation will happen via useEffect when auth state updates
+    } catch (err) {
+      console.error("2FA verification error:", err);
+      toast.error("Verification failed");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleResendOTP = async () => {
+    if (!pendingUser) return;
+
+    setIsSubmitting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("two-factor-auth", {
+        body: { 
+          action: "resend_otp",
+          userId: pendingUser.id,
+          email: pendingUser.email
+        },
+      });
+
+      if (error || !data?.success) {
+        toast.error(data?.error || "Failed to resend code");
+        return;
+      }
+
+      toast.success("New verification code sent to your email");
+    } catch (err) {
+      console.error("Resend OTP error:", err);
+      toast.error("Failed to resend code");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -214,16 +278,37 @@ export default function Auth() {
       return;
     }
 
+    if (mode === "2fa") {
+      await handle2FAVerification();
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
       if (mode === "login") {
-        const { error } = await signIn(formData.email, formData.password);
+        const { data: authData, error } = await signIn(formData.email, formData.password);
         if (error) {
           toast.error(error.message || "Failed to sign in");
-        } else {
-          toast.success("Signed in successfully!");
-          // Navigation will happen via useEffect
+        } else if (authData?.user) {
+          // Check if user requires 2FA
+          const { data: twoFAData } = await supabase.functions.invoke("two-factor-auth", {
+            body: { 
+              action: "send_otp",
+              userId: authData.user.id,
+              email: authData.user.email
+            },
+          });
+
+          if (twoFAData?.requires2FA) {
+            // User is admin/super_admin - show 2FA screen
+            setPendingUser({ id: authData.user.id, email: authData.user.email! });
+            setMode("2fa");
+            toast.info("Verification code sent to your email");
+          } else {
+            toast.success("Signed in successfully!");
+            // Navigation will happen via useEffect
+          }
         }
       } else {
         // Validate fields
@@ -319,7 +404,7 @@ export default function Auth() {
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
-              {mode === "login" ? "Welcome back" : mode === "forgot" ? "Reset Password" : mode === "reset" ? "Set New Password" : mode === "admin-setup" ? "Super Admin Setup" : "Create your account"}
+              {mode === "login" ? "Welcome back" : mode === "forgot" ? "Reset Password" : mode === "reset" ? "Set New Password" : mode === "admin-setup" ? "Super Admin Setup" : mode === "2fa" ? "Two-Factor Authentication" : "Create your account"}
             </h1>
             <p className="text-muted-foreground">
               {mode === "login" 
@@ -330,12 +415,52 @@ export default function Auth() {
                 ? "Enter your new password below"
                 : mode === "admin-setup"
                 ? "Configure Super Admin credentials securely"
+                : mode === "2fa"
+                ? `Enter the 6-digit code sent to ${pendingUser?.email}`
                 : "Join 50,000+ users enjoying our services"}
             </p>
           </div>
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* 2FA OTP Input */}
+            {mode === "2fa" && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-center mb-4">
+                  <div className="p-4 rounded-full bg-primary/10">
+                    <KeyRound className="h-8 w-8 text-primary" />
+                  </div>
+                </div>
+                <div className="flex justify-center">
+                  <InputOTP 
+                    maxLength={6} 
+                    value={otpCode}
+                    onChange={setOtpCode}
+                  >
+                    <InputOTPGroup>
+                      <InputOTPSlot index={0} />
+                      <InputOTPSlot index={1} />
+                      <InputOTPSlot index={2} />
+                      <InputOTPSlot index={3} />
+                      <InputOTPSlot index={4} />
+                      <InputOTPSlot index={5} />
+                    </InputOTPGroup>
+                  </InputOTP>
+                </div>
+                <p className="text-center text-sm text-muted-foreground">
+                  Code expires in 5 minutes
+                </p>
+                <button
+                  type="button"
+                  onClick={handleResendOTP}
+                  disabled={isSubmitting}
+                  className="w-full text-center text-sm text-primary hover:underline disabled:opacity-50"
+                >
+                  Didn't receive code? Resend
+                </button>
+              </div>
+            )}
+
             {/* Role Selection - Signup only */}
             {mode === "signup" && (
               <div className="space-y-3">
@@ -582,15 +707,15 @@ export default function Auth() {
               variant="hero" 
               className="w-full" 
               size="lg"
-              disabled={isSubmitting}
+              disabled={isSubmitting || (mode === "2fa" && otpCode.length !== 6)}
             >
               {isSubmitting ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  {mode === "login" ? "Signing In..." : mode === "forgot" ? "Sending..." : mode === "reset" ? "Updating Password..." : mode === "admin-setup" ? "Setting Up..." : "Creating Account..."}
+                  {mode === "login" ? "Signing In..." : mode === "forgot" ? "Sending..." : mode === "reset" ? "Updating Password..." : mode === "admin-setup" ? "Setting Up..." : mode === "2fa" ? "Verifying..." : "Creating Account..."}
                 </>
               ) : (
-                mode === "login" ? "Sign In" : mode === "forgot" ? "Send Reset Link" : mode === "reset" ? "Update Password" : mode === "admin-setup" ? "Setup Super Admin" : "Create Account"
+                mode === "login" ? "Sign In" : mode === "forgot" ? "Send Reset Link" : mode === "reset" ? "Update Password" : mode === "admin-setup" ? "Setup Super Admin" : mode === "2fa" ? "Verify Code" : "Create Account"
               )}
             </Button>
           </form>
@@ -607,14 +732,18 @@ export default function Auth() {
                   Sign up
                 </button>
               </>
-            ) : mode === "forgot" || mode === "reset" || mode === "admin-setup" ? (
+            ) : mode === "forgot" || mode === "reset" || mode === "admin-setup" || mode === "2fa" ? (
               <>
-                {mode === "admin-setup" ? "Already have credentials?" : "Remember your password?"}{" "}
+                {mode === "admin-setup" ? "Already have credentials?" : mode === "2fa" ? "Wrong account?" : "Remember your password?"}{" "}
                 <button
-                  onClick={() => setMode("login")}
+                  onClick={() => {
+                    setMode("login");
+                    setPendingUser(null);
+                    setOtpCode("");
+                  }}
                   className="text-primary font-medium hover:underline"
                 >
-                  Sign in
+                  {mode === "2fa" ? "Back to login" : "Sign in"}
                 </button>
               </>
             ) : (
