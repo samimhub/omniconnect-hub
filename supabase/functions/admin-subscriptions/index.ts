@@ -7,7 +7,8 @@ const corsHeaders = {
 };
 
 // Helper function to verify admin role
-async function verifyAdminRole(req: Request, supabaseAdmin: ReturnType<typeof createClient>) {
+// deno-lint-ignore no-explicit-any
+async function verifyAdminRole(req: Request, supabaseAdmin: any) {
   const authHeader = req.headers.get('Authorization');
   if (!authHeader) {
     return { error: 'Unauthorized: Missing authorization header', status: 401 };
@@ -43,8 +44,9 @@ async function verifyAdminRole(req: Request, supabaseAdmin: ReturnType<typeof cr
     return { error: 'Forbidden: Admin access required', status: 403 };
   }
 
-  console.log('Admin access granted for user:', user.id, 'with role:', roleData[0].role);
-  return { user, role: roleData[0].role };
+  const userRole = (roleData as { role: string }[])[0].role;
+  console.log('Admin access granted for user:', user.id, 'with role:', userRole);
+  return { user, role: userRole };
 }
 
 serve(async (req) => {
