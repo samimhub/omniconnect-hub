@@ -48,25 +48,33 @@ serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
-    // Check if user has admin or super_admin role
+    // Check if user has admin, super_admin, or supervisor role
     const { data: roleData, error: roleError } = await supabaseAdmin
       .from('user_roles')
       .select('role')
       .eq('user_id', user.id)
-      .in('role', ['admin', 'super_admin']);
+      .in('role', ['admin', 'super_admin', 'supervisor']);
 
     if (roleError || !roleData || roleData.length === 0) {
       console.error('Role check error:', roleError);
-      throw new Error('Admin access required');
+      throw new Error('Admin or Supervisor access required');
     }
 
     // Get the highest role of the requesting user
     const userRoles = roleData.map(r => r.role);
     const isSuperAdmin = userRoles.includes('super_admin');
-    const highestRole = isSuperAdmin ? 'super_admin' : 'admin';
+    const isAdmin = userRoles.includes('admin');
+    const isSupervisor = userRoles.includes('supervisor');
+    const highestRole = isSuperAdmin ? 'super_admin' : isAdmin ? 'admin' : 'supervisor';
 
     const { action, ...params } = await req.json();
     console.log('Admin user action:', action, params, 'by', highestRole);
+
+    // Supervisors can only perform read operations
+    const supervisorAllowedActions = ['list_users', 'get_user_details', 'get_role_stats'];
+    if (isSupervisor && !isAdmin && !isSuperAdmin && !supervisorAllowedActions.includes(action)) {
+      throw new Error('Supervisors can only view users, not modify them');
+    }
 
     let result;
 
