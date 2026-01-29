@@ -26,6 +26,8 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp
 
 type AuthMode = "login" | "signup" | "forgot" | "reset" | "admin-setup" | "2fa";
 
+// Only user and agent roles are available for public signup
+// Admin, Supervisor, Super Admin can only be assigned by Super Admin
 const roleOptions: { value: AppRole; label: string; description: string; icon: React.ReactNode }[] = [
   { 
     value: "user", 
@@ -38,12 +40,6 @@ const roleOptions: { value: AppRole; label: string; description: string; icon: R
     label: "Agent", 
     description: "Earn commission on bookings",
     icon: <UserCheck className="h-5 w-5" />
-  },
-  { 
-    value: "admin", 
-    label: "Admin", 
-    description: "Manage the platform",
-    icon: <Shield className="h-5 w-5" />
   },
 ];
 
