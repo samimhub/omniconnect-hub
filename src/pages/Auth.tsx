@@ -354,14 +354,17 @@ export default function Auth() {
                   referee_user_id: signUpData.user.id,
                 },
               });
-              toast.success("Account created! You received 25 referral coins as a welcome bonus.");
+              toast.success("Account created! You received 25 referral coins as a welcome bonus. Please sign in.");
             } catch (refErr) {
               console.error("Referral processing failed:", refErr);
-              toast.success("Account created successfully! You can now sign in.");
+              toast.success("Account created successfully! Please sign in.");
             }
           } else {
-            toast.success("Account created successfully! You can now sign in.");
+            toast.success("Account created successfully! Please sign in.");
           }
+          // Sign out to prevent auto-redirect before role is properly assigned
+          // User must log in fresh so the role is correctly fetched
+          await supabase.auth.signOut();
           setMode("login");
         }
       }
