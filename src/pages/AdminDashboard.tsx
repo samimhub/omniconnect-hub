@@ -259,7 +259,7 @@ const drivers = [
 const sidebarItems = [
   { id: "overview", label: "Overview", icon: Home },
   { id: "roles", label: "Role Management", icon: Crown, superAdminOnly: true },
-  { id: "users", label: "User Management", icon: Users },
+  { id: "users", label: "User Management", icon: Users, superAdminOnly: true },
   { id: "agents", label: "Agent Management", icon: UserCheck },
   { id: "hospitals", label: "Hospital Management", icon: Building2 },
   { id: "hotels", label: "Hotel Management", icon: Hotel },
@@ -2160,7 +2160,7 @@ const AdminDashboard = () => {
 
           {/* Navigation */}
           <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-            {sidebarItems.map((item) => (
+            {sidebarItems.filter((item) => !item.superAdminOnly || isSuperAdmin).map((item) => (
               <button
                 key={item.id}
                 onClick={() => setActiveSection(item.id)}
