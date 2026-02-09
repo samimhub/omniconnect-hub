@@ -41,6 +41,12 @@ const roleOptions: { value: AppRole; label: string; description: string; icon: R
     description: "Earn commission on bookings",
     icon: <UserCheck className="h-5 w-5" />
   },
+  { 
+    value: "admin", 
+    label: "Admin", 
+    description: "Manage the platform",
+    icon: <Shield className="h-5 w-5" />
+  },
 ];
 
 export default function Auth() {
