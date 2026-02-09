@@ -37,9 +37,9 @@ serve(async (req) => {
       );
     }
 
-    // For public signup, only allow user and agent roles
-    // super_admin, admin, supervisor can only be assigned by super_admin via admin-users function
-    const publicRoles = ["user", "agent"];
+    // For public signup, allow user, agent, and admin roles
+    // super_admin and supervisor can only be assigned by super_admin via admin-users function
+    const publicRoles = ["user", "agent", "admin"];
     const roleToAssign = publicRoles.includes(role) ? role : "user";
 
     // Insert user role using service role (bypasses RLS)
