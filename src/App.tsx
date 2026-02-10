@@ -16,6 +16,7 @@ import AgentDashboard from "./pages/AgentDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import SupervisorDashboard from "./pages/SupervisorDashboard";
 import NotFound from "./pages/NotFound";
+import RestaurantMenu from "./pages/RestaurantMenu";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 
 const queryClient = new QueryClient();
@@ -35,6 +36,7 @@ const App = () => (
           <Route path="/travel" element={<Travel />} />
           <Route path="/ride" element={<Ride />} />
           <Route path="/membership" element={<Membership />} />
+          <Route path="/restaurant-menu/:restaurantId" element={<RestaurantMenu />} />
           
           {/* Protected Routes */}
           <Route 
