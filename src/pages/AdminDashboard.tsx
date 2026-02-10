@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { 
   Users, UserCheck, Building2, Hotel, Plane, Car, Wallet, 
   Settings, BarChart3, Bell, Shield, FileText, Gift, 
-  TrendingUp, TrendingDown, DollarSign, Activity, Eye, 
+  TrendingUp, TrendingDown, DollarSign, Activity, Eye, UtensilsCrossed, 
   CheckCircle, XCircle, Clock, Search, Filter, MoreVertical,
   Plus, Download, Upload, Edit, Trash2, Ban, UserPlus,
   Stethoscope, BedDouble, MapPin, CreditCard, Receipt,
@@ -47,6 +47,7 @@ import { AdminMembershipPlans } from "@/components/admin/AdminMembershipPlans";
 import { AdminUserManagement } from "@/components/admin/AdminUserManagement";
 import { AdminHospitalManagement } from "@/components/admin/AdminHospitalManagement";
 import { SuperAdminRoleManagement } from "@/components/admin/SuperAdminRoleManagement";
+import { AdminRestaurantManagement } from "@/components/admin/AdminRestaurantManagement";
 import { toast } from "sonner";
 
 // Mock Data
@@ -263,6 +264,7 @@ const sidebarItems = [
   { id: "agents", label: "Agent Management", icon: UserCheck },
   { id: "hospitals", label: "Hospital Management", icon: Building2 },
   { id: "hotels", label: "Hotel Management", icon: Hotel },
+  { id: "restaurant", label: "Restaurant Management", icon: UtensilsCrossed },
   { id: "travel", label: "Travel Management", icon: Plane },
   { id: "rides", label: "Ride Management", icon: Car },
   { id: "wallet", label: "Wallet & Payments", icon: Wallet },
@@ -2122,6 +2124,7 @@ const AdminDashboard = () => {
       case "agents": return renderAgentManagement();
       case "hospitals": return renderHospitalManagement();
       case "hotels": return renderHotelManagement();
+      case "restaurant": return <AdminRestaurantManagement />;
       case "travel": return renderTravelManagement();
       case "rides": return renderRideManagement();
       case "wallet": return renderWalletManagement();
